@@ -4,8 +4,6 @@
 
 tl;dr: Made some AI versions of famous investors argue with each other. ramped up all the way to match an avg wsb regard
 
-So I had this galaxy brain idea: what if we took a bunch of LLMs, made them roleplay as investment legends, and watched them duke it out over stocks? Turns out AI Warren Buffett and AI WSB-mode can't agree on anything (shocking, I know).
-
 The whole gang's here:
 - Boomer AI Buffett preaching about moats
 - AI Cathie Wood trying to convince everyone the future is now
