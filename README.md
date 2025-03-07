@@ -1,4 +1,4 @@
-# 🤖 AI Hedge Fund
+# LLM-Bets
 
 An experimental AI-powered hedge fund that simulates investment decisions using multiple AI agents with distinct investment philosophies and strategies. This project demonstrates the potential of AI in financial analysis and decision-making.
 
