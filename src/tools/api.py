@@ -6,6 +6,7 @@ import requests
 from datetime import datetime, timedelta
 import json
 from typing import List, Dict, Any, Optional
+from functools import lru_cache
 
 from data.cache import get_cache
 from data.models import (
@@ -24,46 +25,114 @@ from data.models import (
 # Global cache instance
 _cache = get_cache()
 
+# Define API keys and fallback order
+def get_api_keys():
+    """Get all available API keys with fallback options."""
+    return {
+        "alpha_vantage": os.environ.get("ALPHA_VANTAGE_API_KEY"),
+        "stockdata": os.environ.get("STOCKDATA_API_KEY"),
+        "finnhub": os.environ.get("FINNHUB_API_KEY"),
+        "eodhd": os.environ.get("EODHD_API_KEY"),
+    }
 
 def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
-    """Fetch price data from cache or Yahoo Finance."""
+    """Fetch price data with multi-source fallback strategy."""
     # Check cache first
     if cached_data := _cache.get_prices(ticker):
-        # Filter cached data by date range and convert to Price objects
         filtered_data = [Price(**price) for price in cached_data if start_date <= price["time"] <= end_date]
         if filtered_data:
             return filtered_data
 
-    # If not in cache or no data in range, fetch from Yahoo Finance
+    # Try primary source: Yahoo Finance
     try:
         # Get the data from Yahoo Finance
         yf_ticker = yf.Ticker(ticker)
         df = yf_ticker.history(start=start_date, end=end_date)
         
-        if df.empty:
-            return []
-        
-        # Convert dataframe to list of Price objects
-        prices = []
-        for index, row in df.iterrows():
-            date_str = index.strftime('%Y-%m-%d')
-            price = Price(
-                open=float(row['Open']),
-                close=float(row['Close']),
-                high=float(row['High']),
-                low=float(row['Low']),
-                volume=int(row['Volume']),
-                time=date_str
-            )
-            prices.append(price)
-        
-        # Cache the results as dicts
-        _cache.set_prices(ticker, [p.model_dump() for p in prices])
-        return prices
-        
+        if not df.empty:
+            prices = []
+            for index, row in df.iterrows():
+                date_str = index.strftime('%Y-%m-%d')
+                price = Price(
+                    open=float(row['Open']),
+                    close=float(row['Close']),
+                    high=float(row['High']),
+                    low=float(row['Low']),
+                    volume=int(row['Volume']),
+                    time=date_str
+                )
+                prices.append(price)
+            
+            # Cache the results
+            _cache.set_prices(ticker, [p.model_dump() for p in prices])
+            return prices
     except Exception as e:
-        print(f"Error fetching price data for {ticker}: {str(e)}")
-        return []
+        print(f"Yahoo Finance error for {ticker}: {str(e)}")
+    
+    # Fallback to StockData.org if Yahoo fails
+    try:
+        api_keys = get_api_keys()
+        if api_key := api_keys.get("stockdata"):
+            url = f"https://api.stockdata.org/v1/data/eod?symbols={ticker}&date_from={start_date}&date_to={end_date}&api_key={api_key}"
+            response = requests.get(url)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "data" in data and data["data"]:
+                    prices = []
+                    for item in data["data"]:
+                        price = Price(
+                            open=float(item["open"]),
+                            close=float(item["close"]),
+                            high=float(item["high"]),
+                            low=float(item["low"]),
+                            volume=int(item["volume"]),
+                            time=item["date"]
+                        )
+                        prices.append(price)
+                    
+                    # Cache the results
+                    _cache.set_prices(ticker, [p.model_dump() for p in prices])
+                    return prices
+    except Exception as e:
+        print(f"StockData.org error for {ticker}: {str(e)}")
+        
+    # Last resort: Alpha Vantage
+    try:
+        api_keys = get_api_keys()
+        if api_key := api_keys.get("alpha_vantage"):
+            url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={ticker}&outputsize=full&apikey={api_key}"
+            response = requests.get(url)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "Time Series (Daily)" in data:
+                    time_series = data["Time Series (Daily)"]
+                    prices = []
+                    
+                    for date, values in time_series.items():
+                        if start_date <= date <= end_date:
+                            price = Price(
+                                open=float(values["1. open"]),
+                                close=float(values["4. close"]),
+                                high=float(values["2. high"]),
+                                low=float(values["3. low"]),
+                                volume=int(values["6. volume"]),
+                                time=date
+                            )
+                            prices.append(price)
+                    
+                    # Sort by date, newest first
+                    prices.sort(key=lambda x: x.time, reverse=True)
+                    
+                    # Cache the results
+                    _cache.set_prices(ticker, [p.model_dump() for p in prices])
+                    return prices
+    except Exception as e:
+        print(f"Alpha Vantage error for {ticker}: {str(e)}")
+    
+    # Return empty list if all sources fail
+    return []
 
 
 def get_financial_metrics(

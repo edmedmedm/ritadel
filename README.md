@@ -1,4 +1,4 @@
-# Ritadel
+# ritadel
 
 <img align="right" width="400" src="https://github.com/user-attachments/assets/1df4003a-7b17-497a-beed-e3e35409a5b8" alt="pepe"/>
 
@@ -69,7 +69,7 @@ The agents participate in a simulated round table discussion where they:
 
 - Python 3.8+
 - Poetry package manager
-- API keys for LLM providers and financial data
+- At least one LLM API key
 
 ### Installation
 
@@ -98,7 +98,11 @@ cp .env.example .env
 
 Configure your API keys in `.env`:
 
+#### Required APIs:
+
 ```bash
+# At least ONE of these LLM providers is required:
+
 # OpenAI API Key (for GPT-4, GPT-3.5)
 OPENAI_API_KEY=your-openai-api-key
 
@@ -108,22 +112,39 @@ GROQ_API_KEY=your-groq-api-key
 # Anthropic API Key (for Claude)
 ANTHROPIC_API_KEY=your-anthropic-api-key
 
-# Gemini API Key (for Google's Gemini models) - Recommended
+# Gemini API Key (for Google's Gemini models)
 GEMINI_API_KEY=your-gemini-api-key
 
-# Get your free api key at https://www.alphavantage.co/support/#api-key
+# REQUIRED: Alpha Vantage API Key (free tier) for financial data
+# Get your free API key at https://www.alphavantage.co/support/#api-key
 ALPHA_VANTAGE_API_KEY=your-alpha-vantage-api-key
+```
 
-# Reddit API Configuration (for WSB sentiment analysis)
+#### Optional APIs for Enhanced Features:
+
+```bash
+# Additional free financial data sources (all optional but recommended)
+STOCKDATA_API_KEY=your-stockdata-api-key  # Free tier available at stockdata.org
+FINNHUB_API_KEY=your-finnhub-api-key      # Free tier available at finnhub.io
+EODHD_API_KEY=your-eodhd-api-key          # Free tier available at eodhistoricaldata.com
+
+# For WSB agent (required only if using the WSB agent)
 REDDIT_CLIENT_ID=your-reddit-client-id
 REDDIT_CLIENT_SECRET=your-reddit-client-secret
 REDDIT_USER_AGENT=Ritadel:v1.0 (by KRSHH)
 ```
 
+**API Key Priority System:**
+1. At least one LLM provider API key is required (OpenAI, Groq, Anthropic, or Gemini)
+2. Alpha Vantage is the primary financial data source (free tier is sufficient)
+3. Additional financial APIs provide redundancy in this priority order:
+   a. StockData.org
+   b. EODHD
+   c. Finnhub
+
 **Note**: 
-- You need at least one LLM provider API key (OpenAI, Groq, Anthropic, or Gemini)
-- Free financial data is available for AAPL, GOOGL, MSFT, NVDA, and TSLA
-- Reddit API keys are required for the WSB Agent's sentiment analysis
+- The system uses multiple free financial data sources with automatic fallbacks if one fails
+- Reddit API keys are only required if you want to use the WSB Agent's real-time sentiment analysis
 - To get Reddit API keys:
   1. Visit https://www.reddit.com/prefs/apps
   2. Click "Create App" or "Create Another App"
