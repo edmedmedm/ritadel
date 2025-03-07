@@ -154,34 +154,101 @@ EODHD_API_KEY=your-eodhd-api-key          # Free tier available at eodhistorical
 
 ## 🚀 Usage
 
-### Running the Hedge Fund
+### Basic Usage
 
-Basic usage:
+Run the hedge fund with default settings:
 ```bash
 poetry run python src/main.py --ticker AAPL,MSFT,NVDA
 ```
 
-With detailed reasoning:
+### Advanced Options
+
+1. Show detailed reasoning from each analyst:
 ```bash
 poetry run python src/main.py --ticker AAPL,MSFT,NVDA --show-reasoning
 ```
 
-With date range:
+2. Specify a date range:
 ```bash
 poetry run python src/main.py --ticker AAPL,MSFT,NVDA --start-date 2024-01-01 --end-date 2024-03-01
 ```
 
-### Running the Backtester
+3. Run with round table discussion:
+```bash
+poetry run python src/main.py --ticker AAPL,MSFT,NVDA --round-table
+```
 
-Basic backtest:
+4. Visualize the agent interaction graph:
+```bash
+poetry run python src/main.py --ticker AAPL,MSFT,NVDA --show-agent-graph
+```
+
+5. Analyze cryptocurrencies:
+```bash
+poetry run python src/main.py --ticker BTC,ETH,SOL --crypto
+```
+
+6. Set initial portfolio parameters:
+```bash
+poetry run python src/main.py --ticker AAPL,MSFT,NVDA --initial-cash 100000 --margin-requirement 0.5
+```
+
+### Backtesting
+
+1. Basic backtest:
 ```bash
 poetry run python src/backtester.py --ticker AAPL,MSFT,NVDA
 ```
 
-With date range:
+2. Backtest with date range:
 ```bash
 poetry run python src/backtester.py --ticker AAPL,MSFT,NVDA --start-date 2024-01-01 --end-date 2024-03-01
 ```
+
+3. Backtest with custom initial capital:
+```bash
+poetry run python src/backtester.py --ticker AAPL,MSFT,NVDA --initial-cash 500000
+```
+
+4. Backtest with margin trading:
+```bash
+poetry run python src/backtester.py --ticker AAPL,MSFT,NVDA --margin-requirement 0.5
+```
+
+5. Backtest cryptocurrencies:
+```bash
+poetry run python src/backtester.py --ticker BTC,ETH,SOL --crypto
+```
+
+### Command Line Arguments
+
+| Argument | Description | Default |
+|----------|-------------|---------|
+| `--ticker` | Comma-separated list of stock/crypto symbols | Required |
+| `--start-date` | Start date in YYYY-MM-DD format | 3 months ago |
+| `--end-date` | End date in YYYY-MM-DD format | Today |
+| `--initial-cash` | Initial portfolio cash amount | 100,000 |
+| `--margin-requirement` | Margin requirement ratio (e.g., 0.5 for 50%) | 0.0 |
+| `--show-reasoning` | Show detailed analysis from each agent | False |
+| `--show-agent-graph` | Visualize the agent interaction graph | False |
+| `--round-table` | Enable round table discussion | False |
+| `--crypto` | Analyze cryptocurrencies instead of stocks | False |
+
+### Interactive Features
+
+During execution, you'll be prompted to:
+1. Select which AI analysts to include in the analysis
+2. Choose your preferred LLM model
+3. View real-time progress and analysis
+
+### Output
+
+The program provides:
+- Trading signals and confidence levels
+- Detailed reasoning (if --show-reasoning is enabled)
+- Portfolio recommendations
+- Round table discussion (if --round-table is enabled)
+- Performance metrics (in backtesting mode)
 
 ## 📁 Project Structure
 
