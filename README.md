@@ -1,17 +1,18 @@
 # LLM-Bets
 
-<img align="right" width="400" src="https://github.com/user-attachments/assets/1df4003a-7b17-497a-beed-e3e35409a5b8" alt="Price-to-Entertainment Ratio"/>
+<img align="right" width="400" src="https://github.com/user-attachments/assets/1df4003a-7b17-497a-beed-e3e35409a5b8" alt="pepe"/>
 
 tl;dr: Made some AI versions of famous investors argue with each other. ramped up all the way to match an avg wsb regard
 
-The whole gang's here:
-- Boomer AI Buffett preaching about moats
-- AI Cathie Wood trying to convince everyone the future is now
-- AI WSB yoloing life savings into weekly options
-- AI Nancy Pelosi with sus timing (purely coincidental)
+Powered by:
+- Nancy Pelosi's highly intelligent plays
+- Cathie Wood to drain your portfolio
+- avg WSB regard and his posts on the reddit
+- boomer buffett's 
 - And more! 
+- Jim cramar to be added...
 
-Basically created an AI circus where they all fight over whether your favorite stock only goes up or REALLY only goes up. 
+Basically created an AI chatroom where boomer buffet and wsb regard work together as a hedge fund.
 
 Side effects may include: watching AI Charlie Munger call AI Cathie Wood's picks "rat poison squared", AI WSB spamming rocket emojis, and your portfolio doing things that violate the laws of physics.
 
