@@ -108,16 +108,16 @@ GROQ_API_KEY=your-groq-api-key
 # Anthropic API Key (for Claude)
 ANTHROPIC_API_KEY=your-anthropic-api-key
 
-# Gemini API Key (for Google's Gemini models)
+# Gemini API Key (for Google's Gemini models) - Recommended
 GEMINI_API_KEY=your-gemini-api-key
 
-# Financial Data API Key
-FINANCIAL_DATASETS_API_KEY=your-financial-datasets-api-key
+# Get your free api key at https://www.alphavantage.co/support/#api-key
+ALPHA_VANTAGE_API_KEY=your-alpha-vantage-api-key
 
 # Reddit API Configuration (for WSB sentiment analysis)
 REDDIT_CLIENT_ID=your-reddit-client-id
 REDDIT_CLIENT_SECRET=your-reddit-client-secret
-REDDIT_USER_AGENT=your-app-name:v1.0 (by /u/your-username)
+REDDIT_USER_AGENT=Ritadel:v1.0 (by KRSHH)
 ```
 
 **Note**: 
@@ -186,17 +186,6 @@ ai-hedge-fund/
 ├── poetry.toml              # Poetry configuration
 └── README.md               # This file
 ```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Make your changes
-4. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-5. Push to the branch (`git push origin feature/AmazingFeature`)
-6. Open a Pull Request
-
-Please keep pull requests focused and include tests for new functionality.
 
 ## 🐛 Bug Reports & Feature Requests
 
