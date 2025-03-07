@@ -14,7 +14,7 @@ Powered by:
 
 Basically created an AI chatroom where boomer buffet and wsb regard work together as a hedge fund.
 
-Side effects may include: watching AI Charlie Munger call AI Cathie Wood's picks "rat poison squared", AI WSB spamming rocket emojis, and your portfolio doing things that violate the laws of physics.
+
 
 *Disclaimer: This is what peak degeneracy looks like. If you're actually taking financial advice from this, you belong here.*
 
