@@ -119,7 +119,7 @@ GEMINI_API_KEY=your-gemini-api-key
 # Get your free API key at https://www.alphavantage.co/support/#api-key
 ALPHA_VANTAGE_API_KEY=your-alpha-vantage-api-key
 
-# For WSB agent (required only if using the WSB agent)
+# For WSB agent (required only if using the WSB agent) and round-table discussions
 REDDIT_CLIENT_ID=your-reddit-client-id
 REDDIT_CLIENT_SECRET=your-reddit-client-secret
 REDDIT_USER_AGENT=Ritadel:v1.0 (by KRSHH)
