@@ -22,27 +22,28 @@ Basically created an AI chatroom where boomer buffet and wsb regard work togethe
 
 ### 🎭 Multi-Agent Architecture
 
-The system employs several specialized agents, each with unique perspectives and strategies:
+The system employs specialized agents with unique investment perspectives:
 
-#### Value Investors
-- **Warren Buffett Agent** - Seeks wonderful companies at fair prices
-- **Charlie Munger Agent** - Focuses on high-quality businesses with strong moats
-- **Ben Graham Agent** - Hunts for undervalued stocks with margin of safety
-- **Bill Ackman Agent** - Takes activist positions with catalysts for change
+| Agent | Investment Style | Focus Areas |
+|-------|-----------------|-------------|
+| Warren Buffett | Value investing | Quality businesses at fair prices, economic moats, long-term outlook |
+| Charlie Munger | Value investing | Business quality, mental models, competitive advantages |
+| Ben Graham | Deep value | Margin of safety, undervalued assets, conservative metrics |
+| Bill Ackman | Activist investing | High-quality businesses, concentrated positions, catalysts for change |
+| Cathie Wood | Disruptive innovation | Exponential growth, technological breakthroughs, future trends |
+| Nancy Pelosi | Policy-driven | Legislative impacts, regulatory changes, government contracts |
+| WSB | Momentum/contrarian | Meme potential, short squeezes, options plays, social sentiment |
 
-#### Growth & Innovation
-- **Cathie Wood Agent** - Specializes in disruptive innovation and growth
-- **WSB Agent** - Focuses on momentum and high-conviction plays
+#### Analysis Specialists
 
-#### Technical & Fundamental
-- **Technical Analyst** - Analyzes price patterns and technical indicators
-- **Fundamental Analyst** - Deep dives into financial statements
-- **Valuation Analyst** - Focuses on intrinsic value calculations
-- **Sentiment Analyst** - Tracks market psychology and social sentiment
-
-#### Policy & Risk
-- **Nancy Pelosi Agent** - Analyzes policy impacts and regulatory changes
-- **Risk Manager** - Monitors risk metrics and position limits
+| Specialist | Focus | Methodology |
+|------------|-------|-------------|
+| Technical Analyst | Price patterns | Trend following, mean reversion, momentum, volatility |
+| Fundamental Analyst | Financial statements | Profitability, growth, financial health, valuation ratios |
+| Valuation Analyst | Intrinsic value | DCF, owner earnings, margin of safety calculations |
+| Sentiment Analyst | Market psychology | Insider trading patterns, news sentiment, social media |
+| Risk Manager | Position sizing | Portfolio exposure, volatility management, cash allocation |
+| Portfolio Manager | Final decisions | Signal aggregation, position sizing, execution strategy |
 
 ### 🔄 Round Table Discussion
 
