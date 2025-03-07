@@ -1,4 +1,4 @@
-# LLM-Bets
+# Ritadel
 
 <img align="right" width="400" src="https://github.com/user-attachments/assets/1df4003a-7b17-497a-beed-e3e35409a5b8" alt="pepe"/>
 
@@ -75,8 +75,8 @@ The agents participate in a simulated round table discussion where they:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/virattt/ai-hedge-fund.git
-cd ai-hedge-fund
+git clone https://github.com/KRSHH/Ritadel.git
+cd Ritadel
 ```
 
 2. Install Poetry (if not already installed):
