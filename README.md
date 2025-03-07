@@ -1,8 +1,6 @@
 # LLM-Bets
 
-<table>
-<tr>
-<td width="60%" valign="top">
+<img align="right" width="400" src="https://github.com/user-attachments/assets/1df4003a-7b17-497a-beed-e3e35409a5b8" alt="Price-to-Entertainment Ratio"/>
 
 Ever wanted to lose money faster using cutting-edge AI? Look no further! LLM-Bets combines the power of Large Language Models with the chaos of the stock market to help you achieve unprecedented levels of "investment creativity." 
 
@@ -18,13 +16,6 @@ Features:
 Remember: This is what happens when you let AI manage your Wendy's paycheck. Use at your own risk! 
 
 *Not financial advice. Unless you're inverse trading, then maybe?*
-
-</td>
-<td width="40%" valign="top">
-<img src="https://github.com/user-attachments/assets/1df4003a-7b17-497a-beed-e3e35409a5b8" alt="Price-to-Entertainment Ratio" width="100%"/>
-</td>
-</tr>
-</table>
 
 ## 🌟 Features
 
