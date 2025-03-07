@@ -38,6 +38,7 @@ class Backtester:
         model_provider: str = "OpenAI",
         selected_analysts: list[str] = [],
         initial_margin_requirement: float = 0.0,
+        is_crypto: bool = False,
     ):
         """
         :param agent: The trading agent (Callable).
@@ -49,6 +50,7 @@ class Backtester:
         :param model_provider: Which LLM provider (OpenAI, etc).
         :param selected_analysts: List of analyst names or IDs to incorporate.
         :param initial_margin_requirement: The margin ratio (e.g. 0.5 = 50%).
+        :param is_crypto: Whether to analyze cryptocurrency instead of stocks.
         """
         self.agent = agent
         self.tickers = tickers
@@ -58,6 +60,7 @@ class Backtester:
         self.model_name = model_name
         self.model_provider = model_provider
         self.selected_analysts = selected_analysts
+        self.is_crypto = is_crypto
 
         # Store the margin ratio (e.g. 0.5 means 50% margin required).
         self.margin_ratio = initial_margin_requirement
@@ -281,16 +284,17 @@ class Backtester:
 
         for ticker in self.tickers:
             # Fetch price data for the entire period, plus 1 year
-            get_prices(ticker, start_date_str, self.end_date)
+            get_prices(ticker, start_date_str, self.end_date, is_crypto=self.is_crypto)
 
             # Fetch financial metrics
-            get_financial_metrics(ticker, self.end_date, limit=10)
+            get_financial_metrics(ticker, self.end_date, limit=10, is_crypto=self.is_crypto)
 
-            # Fetch insider trades
-            get_insider_trades(ticker, self.end_date, start_date=self.start_date, limit=1000)
+            # Fetch insider trades (not applicable for crypto but keeps interface consistent)
+            if not self.is_crypto:
+                get_insider_trades(ticker, self.end_date, start_date=self.start_date, limit=1000)
 
             # Fetch company news
-            get_company_news(ticker, self.end_date, start_date=self.start_date, limit=1000)
+            get_company_news(ticker, self.end_date, start_date=self.start_date, limit=1000, is_crypto=self.is_crypto)
 
         print("Data pre-fetch complete.")
 
@@ -649,11 +653,21 @@ if __name__ == "__main__":
         default=0.0,
         help="Margin ratio for short positions, e.g. 0.5 for 50% (default: 0.0)",
     )
+    parser.add_argument(
+        "--crypto",
+        action="store_true",
+        help="Analyze cryptocurrency instead of stocks (append -USD to ticker symbols)"
+    )
 
     args = parser.parse_args()
 
     # Parse tickers from comma-separated string
     tickers = [ticker.strip() for ticker in args.tickers.split(",")] if args.tickers else []
+    
+    # If crypto mode is enabled, append USD suffix to tickers if not already present
+    if args.crypto:
+        tickers = [ticker if ("-USD" in ticker.upper() or "/USD" in ticker.upper()) 
+                  else f"{ticker}-USD" for ticker in tickers]
 
     # Choose analysts
     selected_analysts = None
@@ -717,6 +731,7 @@ if __name__ == "__main__":
         model_provider=model_provider,
         selected_analysts=selected_analysts,
         initial_margin_requirement=args.margin_requirement,
+        is_crypto=args.crypto
     )
 
     performance_metrics = backtester.run_backtest()

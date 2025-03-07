@@ -54,6 +54,7 @@ def run_hedge_fund(
     selected_analysts: list[str] = [],
     model_name: str = "gpt-4o",
     model_provider: str = "OpenAI",
+    is_crypto: bool = False,
 ):
     # Start progress tracking
     progress.start()
@@ -76,11 +77,13 @@ def run_hedge_fund(
                 "end_date": end_date,
                 "portfolio": portfolio,
                 "analyst_signals": {},
+                "is_crypto": is_crypto,
             },
             "metadata": {
                 "show_reasoning": show_reasoning,
                 "model_name": model_name,
                 "model_provider": model_provider,
+                "is_crypto": is_crypto,
             },
         }
 
@@ -167,7 +170,7 @@ def create_workflow(selected_analysts=None):
     return workflow
 
 
-def run_all_analysts_with_round_table(tickers, start_date, end_date, portfolio, show_reasoning, model_name, model_provider):
+def run_all_analysts_with_round_table(tickers, start_date, end_date, portfolio, show_reasoning, model_name, model_provider, is_crypto=False):
     """
     Run all available analysts and then conduct a round table discussion without user selection.
     This is a simplified workflow for when the user specifies the --round-table flag.
@@ -191,6 +194,7 @@ def run_all_analysts_with_round_table(tickers, start_date, end_date, portfolio, 
         selected_analysts=all_analysts,
         model_name=model_name,
         model_provider=model_provider,
+        is_crypto=is_crypto,
     )
     
     # Run the round table discussion
@@ -241,11 +245,21 @@ if __name__ == "__main__":
         action="store_true",
         help="Run an investment round table discussion after individual analyst evaluations"
     )
+    parser.add_argument(
+        "--crypto",
+        action="store_true",
+        help="Analyze cryptocurrency instead of stocks (append -USD to ticker symbols)"
+    )
 
     args = parser.parse_args()
 
     # Parse tickers from comma-separated string
     tickers = [ticker.strip() for ticker in args.tickers.split(",")]
+    
+    # If crypto mode is enabled, append USD suffix to tickers if not already present
+    if args.crypto:
+        tickers = [ticker if ("-USD" in ticker.upper() or "/USD" in ticker.upper()) 
+                  else f"{ticker}-USD" for ticker in tickers]
 
     # Select LLM model
     model_choice = questionary.select(
@@ -323,7 +337,8 @@ if __name__ == "__main__":
             portfolio=portfolio,
             show_reasoning=args.show_reasoning,
             model_name=model_choice,
-            model_provider=model_provider
+            model_provider=model_provider,
+            is_crypto=args.crypto
         )
         print_trading_output(result)
     else:
@@ -362,7 +377,7 @@ if __name__ == "__main__":
             file_path += "graph.png"
             save_graph_as_png(app, file_path)
 
-        # Run the hedge fund
+        # Run the hedge fund with is_crypto flag
         result = run_hedge_fund(
             tickers=tickers,
             start_date=start_date,
@@ -372,5 +387,6 @@ if __name__ == "__main__":
             selected_analysts=selected_analysts,
             model_name=model_choice,
             model_provider=model_provider,
+            is_crypto=args.crypto
         )
         print_trading_output(result)
