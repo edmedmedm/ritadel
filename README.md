@@ -2,7 +2,7 @@
 
 <img align="right" width="400" src="https://github.com/user-attachments/assets/1df4003a-7b17-497a-beed-e3e35409a5b8" alt="Price-to-Entertainment Ratio"/>
 
-tl;dr: Made some AI versions of famous investors argue with each other. Now my portfolio looks like a modern art piece 📉
+tl;dr: Made some AI versions of famous investors argue with each other. ramped up all the way to match an avg wsb regard
 
 So I had this galaxy brain idea: what if we took a bunch of LLMs, made them roleplay as investment legends, and watched them duke it out over stocks? Turns out AI Warren Buffett and AI WSB-mode can't agree on anything (shocking, I know).
 
