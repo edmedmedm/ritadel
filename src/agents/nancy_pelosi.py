@@ -18,11 +18,12 @@ class NancyPelosiSignal(BaseModel):
 
 def nancy_pelosi_agent(state: AgentState):
     """
-    Analyzes stocks using congressional trading patterns and policy insights:
-    1. Companies likely to benefit from upcoming legislation and regulatory changes
-    2. Government contractors and sectors with significant public sector exposure
-    3. Sectors with active policy discussions and potential regulatory shifts
-    4. Strategic long-term positions in market-leading companies
+    Analyzes stocks using policy information advantage and congressional trading patterns:
+    1. Regulatory arbitrage opportunities from insider policy knowledge
+    2. Sectors receiving preferential treatment in legislation or appropriations
+    3. Companies with significant government relationships and contracts
+    4. Identifies asymmetric information opportunities before public disclosure
+    5. Tracks actual congressional trading patterns for signal confirmation
     """
     data = state["data"]
     end_date = data["end_date"]
@@ -45,6 +46,7 @@ def nancy_pelosi_agent(state: AgentState):
                 "outstanding_shares",
                 "total_assets",
                 "research_and_development",
+                "goodwill_and_intangible_assets",  # Often higher in gov contractors
             ],
             end_date,
             period="annual",
@@ -56,9 +58,13 @@ def nancy_pelosi_agent(state: AgentState):
         
         progress.update_status("nancy_pelosi_agent", ticker, "Getting recent news")
         # Analysis of recent news for policy/regulatory mentions
-        company_news = get_company_news(ticker, end_date, limit=50)
+        company_news = get_company_news(ticker, end_date, limit=100)
         
-        progress.update_status("nancy_pelosi_agent", ticker, "Analyzing legislative landscape")
+        progress.update_status("nancy_pelosi_agent", ticker, "Fetching insider trading data")
+        # Get insider trading data to identify patterns
+        insider_trades = get_insider_trades(ticker, end_date, limit=100)
+        
+        progress.update_status("nancy_pelosi_agent", ticker, "Analyzing legislation impact")
         legislation_analysis = analyze_legislation_impact(company_news, ticker)
         
         progress.update_status("nancy_pelosi_agent", ticker, "Analyzing government contract potential")
@@ -66,19 +72,27 @@ def nancy_pelosi_agent(state: AgentState):
         
         progress.update_status("nancy_pelosi_agent", ticker, "Analyzing policy trends")
         policy_analysis = analyze_policy_trends(company_news, ticker)
+
+        progress.update_status("nancy_pelosi_agent", ticker, "Analyzing information asymmetry")
+        asymmetry_analysis = analyze_information_asymmetry(company_news, insider_trades, ticker)
         
-        # Calculate total score
+        progress.update_status("nancy_pelosi_agent", ticker, "Analyzing congressional trading patterns")
+        congressional_trading = analyze_congressional_trading(ticker, insider_trades, company_news)
+        
+        # Calculate total score with higher weight on information asymmetry and congressional trading
         total_score = (
-            legislation_analysis["score"] + 
-            gov_contract_analysis["score"] + 
-            policy_analysis["score"]
+            legislation_analysis["score"] * 0.2 + 
+            gov_contract_analysis["score"] * 0.2 + 
+            policy_analysis["score"] * 0.2 +
+            asymmetry_analysis["score"] * 0.2 +
+            congressional_trading["score"] * 0.2
         )
         max_possible_score = 10
         
         # Generate trading signal
-        if total_score >= 0.7 * max_possible_score:
+        if total_score >= 0.65 * max_possible_score:  # Lower threshold - biased toward action
             signal = "bullish"
-        elif total_score <= 0.3 * max_possible_score:
+        elif total_score <= 0.35 * max_possible_score:
             signal = "bearish"
         else:
             signal = "neutral"
@@ -91,6 +105,8 @@ def nancy_pelosi_agent(state: AgentState):
             "legislation_analysis": legislation_analysis,
             "gov_contract_analysis": gov_contract_analysis,
             "policy_analysis": policy_analysis,
+            "asymmetry_analysis": asymmetry_analysis,
+            "congressional_trading": congressional_trading,
             "market_cap": market_cap,
         }
         
@@ -132,50 +148,60 @@ def nancy_pelosi_agent(state: AgentState):
 
 def analyze_legislation_impact(company_news: list, ticker: str) -> dict:
     """
-    Analyze potential impact of legislation on company performance.
-    
-    Evaluates:
-    - Mentions of pending bills or legislation relevant to the company
-    - Regulatory changes affecting the company's sector
-    - Congressional focus areas that may impact business operations
+    Analyze recent news for mentions of policy or regulatory changes affecting the company.
+    Focus on identifying pre-public information about policy changes that could create profit opportunities.
     """
-    score = 0
-    details = []
+    if not company_news:
+        return {
+            "score": 0,
+            "details": "No news data available for legislation analysis"
+        }
     
-    # Keywords related to legislation
+    # Keywords related to policy and legislation
     legislation_keywords = [
-        'bill', 'legislation', 'congress', 'senate', 'house of representatives',
-        'regulation', 'regulatory', 'policy', 'hearing', 'committee', 'subcommittee',
-        'vote', 'passed', 'law', 'executive order', 'oversight'
+        "bill", "act", "legislation", "congress", "senate", "house", "regulation", 
+        "regulatory", "policy", "subsidies", "tax credit", "incentive", "stimulus",
+        "appropriation", "federal funding", "government program", "committee hearing",
+        "draft legislation", "upcoming vote", "markup session", "lobbying",
+        "earmark", "omnibus", "reconciliation"
     ]
     
+    # Score parameters
+    score = 0
     relevant_news_count = 0
     positive_legislation_count = 0
     negative_legislation_count = 0
+    details = []
     
+    # Legislation analysis
     for news in company_news:
         title_lower = news.title.lower()
         
-        # Check if news contains legislation keywords
+        # Check for legislation-related news
         if any(keyword in title_lower for keyword in legislation_keywords):
             relevant_news_count += 1
             
-            # Simple sentiment analysis based on news sentiment
-            if news.sentiment == "positive":
+            # Score the sentiment for legislation impact
+            sentiment = news.sentiment if hasattr(news, 'sentiment') and news.sentiment else "neutral"
+            
+            if sentiment == "positive":
                 positive_legislation_count += 1
-            elif news.sentiment == "negative":
+                score += 1
+                details.append(f"Positive legislation impact: {news.title}")
+            elif sentiment == "negative":
                 negative_legislation_count += 1
+                score -= 1
+                details.append(f"Negative legislation impact: {news.title}")
     
-    # Score based on volume of legislation-related news
-    if relevant_news_count > 10:
-        score += 2
-        details.append(f"Significant legislative activity: {relevant_news_count} relevant news items indicating potential policy shifts")
-    elif relevant_news_count > 5:
+    # Additional score boost for significant legislative activity
+    if relevant_news_count > 5:
         score += 1
-        details.append(f"Moderate legislative activity: {relevant_news_count} relevant news items suggesting policy attention")
+        details.append(f"High legislative activity: {relevant_news_count} relevant news items")
     
-    # Score based on sentiment of legislation-related news
+    # Calculate net sentiment
     net_sentiment = positive_legislation_count - negative_legislation_count
+    
+    # Interpret the results in more direct terms
     if net_sentiment > 3:
         score += 3
         details.append(f"Highly favorable legislative outlook: +{net_sentiment} - positions before public awareness advisable")
@@ -200,53 +226,72 @@ def analyze_legislation_impact(company_news: list, ticker: str) -> dict:
 
 def analyze_government_contracts(financial_line_items: list, company_news: list) -> dict:
     """
-    Analyze potential government contract opportunities and public sector revenue
+    Analyze company's potential for securing government contracts.
     
-    Evaluates company news and financial data for indicators of government
-    contract activity and public sector business relationships.
+    Looks for:
+    1. History of government contracting
+    2. Mentions of potential contracts in news
+    3. Financial indicators of government business dependence
+    4. Relationships with key government procurement officials
     """
     score = 0
     details = []
     
-    # Keywords related to government contracts
+    # Contract-related news keywords
     contract_keywords = [
-        'contract', 'awarded', 'government', 'federal', 'pentagon', 'defense',
-        'department of', 'agency', 'grant', 'funding', 'appropriation', 'budget',
-        'military', 'procurement', 'infrastructure', 'stimulus', 'project'
+        "contract", "procurement", "award", "bid", "tender", "government deal", 
+        "federal contract", "defense contract", "agency award", "government client",
+        "government purchase", "government supplier", "vendor", "appropriation",
+        "request for proposal", "RFP", "no-bid contract", "sole source"
     ]
     
+    # Check for contract-related news
     contract_news_count = 0
-    large_contracts = 0
+    if company_news:
+        for news in company_news:
+            title_lower = news.title.lower()
+            if any(keyword in title_lower for keyword in contract_keywords):
+                contract_news_count += 1
+                details.append(f"Contract potential indicated in news: {news.title}")
     
-    for news in company_news:
-        title_lower = news.title.lower()
-        
-        # Check if news contains contract keywords
-        if any(keyword in title_lower for keyword in contract_keywords):
-            contract_news_count += 1
-            
-            # Very basic estimate for large contract news
-            if any(x in title_lower for x in ['billion', 'million', 'major', 'large', 'significant']):
-                large_contracts += 1
-    
-    # Score based on potential government contracts in news
-    if large_contracts > 2:
-        score += 4
-        details.append(f"Significant government contract opportunities: {large_contracts} major contracts mentioned")
-    elif contract_news_count > 5:
-        score += 2
-        details.append(f"Moderate government contract activity: {contract_news_count} contract-related news items")
+    if contract_news_count > 3:
+        score += 3
+        details.append(f"Significant contract news: {contract_news_count} related items")
     elif contract_news_count > 0:
         score += 1
-        details.append(f"Some government contract activity: {contract_news_count} contract-related news items")
+        details.append(f"Some contract news: {contract_news_count} related items")
     
-    # Advanced analysis would examine financials for government contract revenue
+    # Analyze financial data for government contract indicators
+    if financial_line_items and len(financial_line_items) > 0:
+        # High goodwill often indicates acquisitions of government contractors
+        if hasattr(financial_line_items[0], 'goodwill_and_intangible_assets') and financial_line_items[0].goodwill_and_intangible_assets:
+            goodwill_to_assets_ratio = financial_line_items[0].goodwill_and_intangible_assets / financial_line_items[0].total_assets if financial_line_items[0].total_assets else 0
+            
+            if goodwill_to_assets_ratio > 0.3:
+                score += 1
+                details.append(f"High goodwill ratio ({goodwill_to_assets_ratio:.2f}) suggests acquisitions of contracted businesses")
+        
+        # Stable revenue patterns often indicate long-term government contracts
+        revenues = [item.revenue for item in financial_line_items if hasattr(item, 'revenue') and item.revenue is not None]
+        if len(revenues) >= 3:
+            revenue_volatility = sum(abs((revenues[i] / revenues[i+1]) - 1) for i in range(len(revenues)-1)) / (len(revenues)-1) if all(r > 0 for r in revenues) else 1
+            
+            if revenue_volatility < 0.1:
+                score += 2
+                details.append(f"Highly stable revenue pattern (volatility: {revenue_volatility:.2f}) suggests long-term contracts")
+            elif revenue_volatility < 0.2:
+                score += 1
+                details.append(f"Relatively stable revenue (volatility: {revenue_volatility:.2f}) suggests possible contract base")
+    
+    # Connect contract potential to investment recommendation
+    if score >= 4:
+        details.append("Strong government contracting position represents significant profit opportunity")
+    elif score >= 2:
+        details.append("Moderate government contracting potential indicates possible profit opportunity")
     
     return {
         "score": score,
-        "details": "; ".join(details) if details else "No significant government contract activity detected",
-        "contract_news_count": contract_news_count,
-        "large_contracts": large_contracts
+        "details": "; ".join(details) if details else "No significant government contract potential detected"
     }
 
 
@@ -298,11 +343,171 @@ def analyze_policy_trends(company_news: list, ticker: str) -> dict:
         score += 2
         details.append(f"Company in high-priority policy sectors: {[area for area in trending_policy_areas if area in priority_sectors]} - favorable positioning")
     
+    # Analysis of policy implications
+    if len(trending_policy_areas) > 1:
+        score += 1
+        details.append(f"Multiple policy areas ({', '.join(trending_policy_areas)}) create cross-sector opportunities")
+    
+    if not company_news:
+        return {
+            "score": 0,
+            "details": "No news data available for policy trend analysis"
+        }
+    
     return {
         "score": score,
-        "details": "; ".join(details) if details else "No significant policy trends affecting company",
-        "policy_area_counts": policy_area_counts,
-        "trending_policy_areas": trending_policy_areas
+        "details": "; ".join(details) if details else "No significant policy trends detected"
+    }
+
+
+def analyze_information_asymmetry(company_news: list, insider_trades: list, ticker: str) -> dict:
+    """
+    Analyze information asymmetry opportunities based on policy knowledge.
+    Looks for patterns indicating potential policy-driven information advantage.
+    
+    This identifies opportunities where policy knowledge creates trading advantage 
+    before public market awareness.
+    """
+    score = 0
+    details = []
+    
+    # Key terms indicating potential information asymmetry
+    asymmetry_keywords = [
+        "upcoming announcement", "pending approval", "not yet public", "confidential", 
+        "internal documents", "sources familiar", "expected to announce", "advance notice",
+        "exclusive", "unreleased", "leaked", "to be determined", "advance knowledge",
+        "preliminary results", "draft report", "early findings", "before official release",
+        "closed-door meeting", "private briefing", "insider", "tip", "rumor", "not widely known"
+    ]
+    
+    # Check for news indicating non-public information
+    asymmetry_news_count = 0
+    high_value_asymmetry = 0
+    
+    if company_news:
+        for news in company_news:
+            title_lower = news.title.lower()
+            
+            if any(keyword in title_lower for keyword in asymmetry_keywords):
+                asymmetry_news_count += 1
+                
+                # Identify particularly valuable asymmetric information
+                if any(term in title_lower for term in ["approval", "contract award", "investigation", "regulatory action"]):
+                    high_value_asymmetry += 1
+                    details.append(f"High-value information asymmetry: {news.title}")
+    
+    # Score based on potential information advantage
+    if high_value_asymmetry > 0:
+        score += 3
+        details.append(f"Significant information advantage opportunities: {high_value_asymmetry} high-value items")
+    elif asymmetry_news_count > 2:
+        score += 2
+        details.append(f"Multiple information advantage opportunities: {asymmetry_news_count} items")
+    elif asymmetry_news_count > 0:
+        score += 1
+        details.append(f"Possible information advantage: {asymmetry_news_count} items")
+    
+    # Analyze timing patterns between news and insider activity
+    if company_news and insider_trades and len(insider_trades) > 0:
+        # Look for insider trading before significant news
+        news_dates = [news.date for news in company_news]
+        trade_dates = [trade.transaction_date for trade in insider_trades if trade.transaction_date]
+        
+        # Simple pattern detection - this could be enhanced with more sophisticated analysis
+        pattern_detected = False
+        for trade_date in trade_dates:
+            for news_date in news_dates:
+                if trade_date and news_date and trade_date < news_date:
+                    days_diff = (datetime.strptime(news_date, "%Y-%m-%d") - datetime.strptime(trade_date, "%Y-%m-%d")).days
+                    if 1 <= days_diff <= 30:  # Trading within 30 days before news
+                        pattern_detected = True
+                        details.append(f"Potential information timing pattern: trading activity {days_diff} days before news")
+                        break
+            if pattern_detected:
+                score += 2
+                break
+    
+    return {
+        "score": score,
+        "details": "; ".join(details) if details else "No significant information asymmetry detected"
+    }
+
+
+def analyze_congressional_trading(ticker: str, insider_trades: list, company_news: list) -> dict:
+    """
+    Analyze patterns of congressional trading and policy timing.
+    Looks for relationships between insider activity and policy events.
+    
+    This identifies cases where congressional trading might signal future policy actions.
+    """
+    score = 0
+    details = []
+    
+    # Congressional trading keywords in news
+    congress_keywords = [
+        "congress", "congressman", "congresswoman", "senator", "representative", 
+        "house member", "committee chair", "subcommittee", "pelosi", "schumer", 
+        "mcconnell", "committee", "caucus", "congressional trading", "disclosure",
+        "financial disclosure", "stock act", "ethics filing"
+    ]
+    
+    # Check for congressional trading related news
+    congress_news_count = 0
+    if company_news:
+        for news in company_news:
+            title_lower = news.title.lower()
+            if any(keyword in title_lower for keyword in congress_keywords):
+                congress_news_count += 1
+                details.append(f"Congress-related trading news: {news.title}")
+    
+    if congress_news_count > 2:
+        score += 3
+        details.append(f"Significant congressional trading interest: {congress_news_count} related items")
+    elif congress_news_count > 0:
+        score += 1
+        details.append(f"Some congressional trading interest: {congress_news_count} related items")
+    
+    # Analyze buy/sell patterns for potential information advantage
+    if insider_trades and len(insider_trades) > 5:
+        # Count buys vs sells
+        buys = sum(1 for trade in insider_trades if trade.transaction_shares > 0)
+        sells = sum(1 for trade in insider_trades if trade.transaction_shares < 0)
+        
+        # Calculate buy/sell ratio
+        if buys + sells > 0:
+            buy_ratio = buys / (buys + sells)
+            
+            if buy_ratio > 0.7:
+                score += 3
+                details.append(f"Strong insider buying pattern: {buy_ratio:.0%} buys - indicates positive information advantage")
+            elif buy_ratio < 0.3:
+                score -= 2
+                details.append(f"Strong insider selling pattern: {(1-buy_ratio):.0%} sells - indicates negative information advantage")
+    
+    # Check for specific sectors with high congressional trading activity
+    congress_heavy_sectors = {
+        "tech": ["AAPL", "MSFT", "GOOG", "GOOGL", "META", "AMZN", "NVDA"],
+        "pharma": ["PFE", "JNJ", "MRK", "ABBV", "LLY"],
+        "defense": ["LMT", "RTX", "NOC", "GD", "BA"],
+        "energy": ["XOM", "CVX", "COP", "SLB", "EOG"],
+        "finance": ["JPM", "BAC", "GS", "MS", "WFC"]
+    }
+    
+    for sector, tickers in congress_heavy_sectors.items():
+        if ticker in tickers:
+            score += 1
+            details.append(f"Company in {sector} sector with high congressional trading activity")
+            break
+    
+    # Finally, check known historically high congressional trading stocks
+    high_trading_stocks = ["AAPL", "MSFT", "AMZN", "GOOGL", "TSLA", "NVDA", "PFE", "JNJ"]
+    if ticker in high_trading_stocks:
+        score += 2
+        details.append(f"{ticker} is among top stocks with historical congressional trading activity")
+    
+    return {
+        "score": score,
+        "details": "; ".join(details) if details else "No significant congressional trading patterns detected"
     }
 
 
@@ -316,27 +521,27 @@ def generate_pelosi_output(
     template = ChatPromptTemplate.from_messages([
         (
             "system",
-            """You are a strategic congressional trading analyst who evaluates stocks based on policy insights:
+            """You analyze stocks based on information advantage and policy knowledge:
 
-            1. Companies positioned to benefit from upcoming legislation and regulation
-            2. Government contractors and sectors with significant federal spending
-            3. Sectors receiving priority in current policy discussions
-            4. Companies with strategic importance to national initiatives
-            5. Blue-chip companies with strong government relationships
+            1. Identify regulatory arbitrage opportunities where policy knowledge creates profit
+            2. Evaluate companies positioned to benefit from upcoming legislation
+            3. Find asymmetric information opportunities before public market awareness
+            4. Determine which companies have direct government revenue streams
+            5. Track actual congressional trading patterns for confirming signals
             
             Key investment principles:
-            - Identify companies well-positioned for legislative and regulatory tailwinds
-            - Focus on sectors currently receiving policy attention and funding
-            - Recognize early policy signals before they become widely understood
-            - Consider timing of major policy announcements for optimal positioning
-            - Maintain a strategic view of government priorities and spending
+            - Use advanced knowledge of policy directions before market prices adjust
+            - Identify legislation impacts on specific companies before wide awareness
+            - Position ahead of government contract awards and appropriations
+            - Monitor committee activities for sector impacts
+            - Leverage information advantages legally but aggressively
             
-            Your analysis should leverage deep understanding of policy processes and government operations for optimal investment outcomes. Focus on information advantage regarding policy directions and regulatory changes.
+            Your analysis is purely profit-focused, logical, and direct. You prioritize identifying information asymmetry that creates actionable trading opportunities.
             """
         ),
         (
             "human",
-            """Based on the following congressional trading style analysis, create an investment signal:
+            """Based on the following policy-driven analysis, create an investment signal:
 
             Analysis Data for {ticker}:
             {analysis_data}
