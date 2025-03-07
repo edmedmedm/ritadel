@@ -1,6 +1,28 @@
 # LLM-Bets
 
-Leverage latest LLMs, finances, news, posts for your next big loss
+<div style="display: flex; align-items: start;">
+<div style="flex: 1;">
+
+Ever wanted to lose money faster using cutting-edge AI? Look no further! LLM-Bets combines the power of Large Language Models with the chaos of the stock market to help you achieve unprecedented levels of "investment creativity." 
+
+We've assembled a dream team of AI agents impersonating famous investors - from Warren Buffett's patient value investing to WSB's YOLO strategies. Watch them argue in a virtual round table while your portfolio does gymnastics! 🤸‍♂️
+
+Features:
+- 🤖 Multiple AI personalities with conflicting advice
+- 📈 Real-time financial data (that you'll probably ignore)
+- 🎭 Simulated drama between AI investors
+- 🎲 Advanced loss generation techniques
+- 🚀 Rocket emojis (because that's important)
+
+Remember: This is what happens when you let AI manage your Wendy's paycheck. Use at your own risk! 
+
+*Not financial advice. Unless you're inverse trading, then maybe?*
+
+</div>
+<div style="flex: 0 0 400px; margin-left: 20px;">
+<img src="pe.png" alt="Price-to-Entertainment Ratio" width="400"/>
+</div>
+</div>
 
 ## 🌟 Features
 
