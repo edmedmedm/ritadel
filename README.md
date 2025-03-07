@@ -20,7 +20,7 @@ Remember: This is what happens when you let AI manage your Wendy's paycheck. Use
 
 </div>
 <div style="flex: 0 0 400px; margin-left: 20px;">
-<img src="pe.png" alt="Price-to-Entertainment Ratio" width="400"/>
+<img src="https://github.com/user-attachments/assets/1df4003a-7b17-497a-beed-e3e35409a5b8" alt="Price-to-Entertainment Ratio" width="400"/>
 </div>
 </div>
 
