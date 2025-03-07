@@ -2,20 +2,22 @@
 
 <img align="right" width="400" src="https://github.com/user-attachments/assets/1df4003a-7b17-497a-beed-e3e35409a5b8" alt="Price-to-Entertainment Ratio"/>
 
-Ever wanted to lose money faster using cutting-edge AI? Look no further! LLM-Bets combines the power of Large Language Models with the chaos of the stock market to help you achieve unprecedented levels of "investment creativity." 
+tl;dr: Made some AI versions of famous investors argue with each other. Now my portfolio looks like a modern art piece 📉
 
-We've assembled a dream team of AI agents impersonating famous investors - from Warren Buffett's patient value investing to WSB's YOLO strategies. Watch them argue in a virtual round table while your portfolio does gymnastics! 🤸‍♂️
+So I had this galaxy brain idea: what if we took a bunch of LLMs, made them roleplay as investment legends, and watched them duke it out over stocks? Turns out AI Warren Buffett and AI WSB-mode can't agree on anything (shocking, I know).
 
-Features:
-- 🤖 Multiple AI personalities with conflicting advice
-- 📈 Real-time financial data (that you'll probably ignore)
-- 🎭 Simulated drama between AI investors
-- 🎲 Advanced loss generation techniques
-- 🚀 Rocket emojis (because that's important)
+The whole gang's here:
+- Boomer AI Buffett preaching about moats
+- AI Cathie Wood trying to convince everyone the future is now
+- AI WSB yoloing life savings into weekly options
+- AI Nancy Pelosi with sus timing (purely coincidental)
+- And more! 
 
-Remember: This is what happens when you let AI manage your Wendy's paycheck. Use at your own risk! 
+Basically created an AI circus where they all fight over whether your favorite stock only goes up or REALLY only goes up. 
 
-*Not financial advice. Unless you're inverse trading, then maybe?*
+Side effects may include: watching AI Charlie Munger call AI Cathie Wood's picks "rat poison squared", AI WSB spamming rocket emojis, and your portfolio doing things that violate the laws of physics.
+
+*Disclaimer: This is what peak degeneracy looks like. If you're actually taking financial advice from this, you belong here.*
 
 ## 🌟 Features
 
