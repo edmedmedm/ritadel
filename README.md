@@ -118,6 +118,11 @@ GEMINI_API_KEY=your-gemini-api-key
 # REQUIRED: Alpha Vantage API Key (free tier) for financial data
 # Get your free API key at https://www.alphavantage.co/support/#api-key
 ALPHA_VANTAGE_API_KEY=your-alpha-vantage-api-key
+
+# For WSB agent (required only if using the WSB agent)
+REDDIT_CLIENT_ID=your-reddit-client-id
+REDDIT_CLIENT_SECRET=your-reddit-client-secret
+REDDIT_USER_AGENT=Ritadel:v1.0 (by KRSHH)
 ```
 
 #### Optional APIs for Enhanced Features:
@@ -127,11 +132,6 @@ ALPHA_VANTAGE_API_KEY=your-alpha-vantage-api-key
 STOCKDATA_API_KEY=your-stockdata-api-key  # Free tier available at stockdata.org
 FINNHUB_API_KEY=your-finnhub-api-key      # Free tier available at finnhub.io
 EODHD_API_KEY=your-eodhd-api-key          # Free tier available at eodhistoricaldata.com
-
-# For WSB agent (required only if using the WSB agent)
-REDDIT_CLIENT_ID=your-reddit-client-id
-REDDIT_CLIENT_SECRET=your-reddit-client-secret
-REDDIT_USER_AGENT=Ritadel:v1.0 (by KRSHH)
 ```
 
 **API Key Priority System:**
