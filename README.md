@@ -2,7 +2,7 @@
 
 <img align="right" width="400" src="https://github.com/user-attachments/assets/1df4003a-7b17-497a-beed-e3e35409a5b8" alt="pepe"/>
 
-tl;dr: Made some AI versions of famous investors argue with each other. ramped up all the way to match an avg wsb regard
+tl;dr: Made some AI characters fight in a chatroom with all info. ramped up all the way to match an avg wsb regard
 
 Powered by:
 - Nancy Pelosi's highly intelligent plays
