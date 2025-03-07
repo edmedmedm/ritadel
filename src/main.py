@@ -19,12 +19,14 @@ from utils.display import print_trading_output
 from utils.analysts import ANALYST_ORDER, get_analyst_nodes
 from utils.progress import progress
 from llm.models import LLM_ORDER, get_model_info
+from agents.round_table import round_table
 
 import argparse
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from tabulate import tabulate
 from utils.visualize import save_graph_as_png
+import json
 
 # Load environment variables from .env file
 load_dotenv()
@@ -57,42 +59,65 @@ def run_hedge_fund(
     progress.start()
 
     try:
-        # Create a new workflow if analysts are customized
-        if selected_analysts:
-            workflow = create_workflow(selected_analysts)
-            agent = workflow.compile()
-        else:
-            agent = app
+        # Create a new workflow with the specified analysts
+        workflow = create_workflow(selected_analysts)
+        
+        # Print the selected analysts for debugging
+        print(f"\n{Fore.CYAN}Selected analysts for workflow: {selected_analysts}{Style.RESET_ALL}\n")
+        
+        app = workflow.compile()
 
-        final_state = agent.invoke(
-            {
-                "messages": [
-                    HumanMessage(
-                        content="Make trading decisions based on the provided data.",
-                    )
-                ],
-                "data": {
-                    "tickers": tickers,
-                    "portfolio": portfolio,
-                    "start_date": start_date,
-                    "end_date": end_date,
-                    "analyst_signals": {},
-                },
-                "metadata": {
-                    "show_reasoning": show_reasoning,
-                    "model_name": model_name,
-                    "model_provider": model_provider,
-                },
+        # Create the initial state
+        initial_state = {
+            "messages": [],
+            "data": {
+                "tickers": tickers,
+                "start_date": start_date,
+                "end_date": end_date,
+                "portfolio": portfolio,
+                "analyst_signals": {},
             },
-        )
-
-        return {
-            "decisions": parse_hedge_fund_response(final_state["messages"][-1].content),
-            "analyst_signals": final_state["data"]["analyst_signals"],
+            "metadata": {
+                "show_reasoning": show_reasoning,
+                "model_name": model_name,
+                "model_provider": model_provider,
+            },
         }
-    finally:
+
+        # Run the workflow
+        result = app.invoke(initial_state)
+        
         # Stop progress tracking
         progress.stop()
+
+        # Extract the portfolio decisions
+        if "portfolio_decision" in result["data"]:
+            portfolio_decision = result["data"]["portfolio_decision"]
+        else:
+            # Handle the case where portfolio_decision might be missing
+            # Look for it in portfolio_management_agent output in messages
+            for message in reversed(result["messages"]):
+                if hasattr(message, "name") and message.name == "portfolio_management_agent":
+                    try:
+                        portfolio_decision = json.loads(message.content)
+                        break
+                    except:
+                        pass
+            else:
+                portfolio_decision = {}
+                print(f"{Fore.RED}Warning: Could not find portfolio decisions in output{Style.RESET_ALL}")
+        
+        # Return result with analyst signals for further processing
+        return {
+            "decisions": portfolio_decision,
+            "analyst_signals": result["data"]["analyst_signals"],
+        }
+    except Exception as e:
+        progress.stop()
+        print(f"Error running hedge fund: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
 
 def start(state: AgentState):
@@ -107,30 +132,83 @@ def create_workflow(selected_analysts=None):
 
     # Get analyst nodes from the configuration
     analyst_nodes = get_analyst_nodes()
-
+    
+    print(f"\n{Fore.YELLOW}Creating workflow with analysts: {selected_analysts}{Style.RESET_ALL}")
+    
     # Default to all analysts if none selected
     if selected_analysts is None:
         selected_analysts = list(analyst_nodes.keys())
-    # Add selected analyst nodes
+        print(f"{Fore.RED}No analysts specified, defaulting to all: {selected_analysts}{Style.RESET_ALL}")
+    
+    # Add all selected analyst nodes
     for analyst_key in selected_analysts:
-        node_name, node_func = analyst_nodes[analyst_key]
-        workflow.add_node(node_name, node_func)
-        workflow.add_edge("start_node", node_name)
-
+        if analyst_key in analyst_nodes:
+            node_name, node_func = analyst_nodes[analyst_key]
+            workflow.add_node(node_name, node_func)
+            workflow.add_edge("start_node", node_name)
+        else:
+            print(f"{Fore.RED}Warning: Analyst {analyst_key} not found in configuration{Style.RESET_ALL}")
+    
     # Always add risk and portfolio management
     workflow.add_node("risk_management_agent", risk_management_agent)
     workflow.add_node("portfolio_management_agent", portfolio_management_agent)
-
-    # Connect selected analysts to risk management
+    
+    # Connect all analysts to risk management
     for analyst_key in selected_analysts:
-        node_name = analyst_nodes[analyst_key][0]
-        workflow.add_edge(node_name, "risk_management_agent")
-
+        if analyst_key in analyst_nodes:
+            node_name = analyst_nodes[analyst_key][0]
+            workflow.add_edge(node_name, "risk_management_agent")
+    
+    # Connect risk management to portfolio management
     workflow.add_edge("risk_management_agent", "portfolio_management_agent")
     workflow.add_edge("portfolio_management_agent", END)
 
     workflow.set_entry_point("start_node")
     return workflow
+
+
+def run_all_analysts_with_round_table(tickers, start_date, end_date, portfolio, show_reasoning, model_name, model_provider):
+    """
+    Run all available analysts and then conduct a round table discussion without user selection.
+    This is a simplified workflow for when the user specifies the --round-table flag.
+    """
+    # Get all available analyst keys (except master which we're removing)
+    analyst_nodes = get_analyst_nodes()
+    all_analysts = [key for key in analyst_nodes.keys() if key != "master"]
+    
+    print(f"\n{Fore.YELLOW}Running all analysts for Round Table discussion:{Style.RESET_ALL}")
+    for analyst in all_analysts:
+        print(f"  {analyst_nodes[analyst][0].replace('_agent', '').replace('_', ' ').title()}")
+    print("")  # Empty line for spacing
+    
+    # Run the regular hedge fund with all analysts
+    result = run_hedge_fund(
+        tickers=tickers,
+        start_date=start_date,
+        end_date=end_date,
+        portfolio=portfolio,
+        show_reasoning=show_reasoning,
+        selected_analysts=all_analysts,
+        model_name=model_name,
+        model_provider=model_provider,
+    )
+    
+    # Run the round table discussion
+    from round_table import run_round_table
+    round_table_results = run_round_table(
+        data={
+            "tickers": tickers,
+            "analyst_signals": result["analyst_signals"]
+        },
+        model_name=model_name,
+        model_provider=model_provider,
+        show_reasoning=show_reasoning
+    )
+    
+    # Add the round table results to the analyst signals
+    result["analyst_signals"]["round_table"] = round_table_results
+    
+    return result
 
 
 if __name__ == "__main__":
@@ -158,35 +236,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "--show-agent-graph", action="store_true", help="Show the agent graph"
     )
+    parser.add_argument(
+        "--round-table",
+        action="store_true",
+        help="Run an investment round table discussion after individual analyst evaluations"
+    )
 
     args = parser.parse_args()
 
     # Parse tickers from comma-separated string
     tickers = [ticker.strip() for ticker in args.tickers.split(",")]
-
-    # Select analysts
-    selected_analysts = None
-    choices = questionary.checkbox(
-        "Select your AI analysts.",
-        choices=[questionary.Choice(display, value=value) for display, value in ANALYST_ORDER],
-        instruction="\n\nInstructions: \n1. Press Space to select/unselect analysts.\n2. Press 'a' to select/unselect all.\n3. Press Enter when done to run the hedge fund.\n",
-        validate=lambda x: len(x) > 0 or "You must select at least one analyst.",
-        style=questionary.Style(
-            [
-                ("checkbox-selected", "fg:green"),
-                ("selected", "fg:green noinherit"),
-                ("highlighted", "noinherit"),
-                ("pointer", "noinherit"),
-            ]
-        ),
-    ).ask()
-
-    if not choices:
-        print("\n\nInterrupt received. Exiting...")
-        sys.exit(0)
-    else:
-        selected_analysts = choices
-        print(f"\nSelected analysts: {', '.join(Fore.GREEN + choice.title().replace('_', ' ') + Style.RESET_ALL for choice in choices)}\n")
 
     # Select LLM model
     model_choice = questionary.select(
@@ -204,7 +263,6 @@ if __name__ == "__main__":
         print("\n\nInterrupt received. Exiting...")
         sys.exit(0)
     else:
-        # Get model info using the helper function
         model_info = get_model_info(model_choice)
         if model_info:
             model_provider = model_info.provider.value
@@ -212,18 +270,6 @@ if __name__ == "__main__":
         else:
             model_provider = "Unknown"
             print(f"\nSelected model: {Fore.GREEN + Style.BRIGHT}{model_choice}{Style.RESET_ALL}\n")
-
-    # Create the workflow with selected analysts
-    workflow = create_workflow(selected_analysts)
-    app = workflow.compile()
-
-    if args.show_agent_graph:
-        file_path = ""
-        if selected_analysts is not None:
-            for selected_analyst in selected_analysts:
-                file_path += selected_analyst + "_"
-            file_path += "graph.png"
-        save_graph_as_png(app, file_path)
 
     # Validate dates if provided
     if args.start_date:
@@ -267,15 +313,64 @@ if __name__ == "__main__":
         }
     }
 
-    # Run the hedge fund
-    result = run_hedge_fund(
-        tickers=tickers,
-        start_date=start_date,
-        end_date=end_date,
-        portfolio=portfolio,
-        show_reasoning=args.show_reasoning,
-        selected_analysts=selected_analysts,
-        model_name=model_choice,
-        model_provider=model_provider,
-    )
-    print_trading_output(result)
+    # Bypass analyst selection when round table is specified
+    if args.round_table:
+        # Run all analysts and round table without requiring user selection
+        result = run_all_analysts_with_round_table(
+            tickers=tickers,
+            start_date=start_date,
+            end_date=end_date,
+            portfolio=portfolio,
+            show_reasoning=args.show_reasoning,
+            model_name=model_choice,
+            model_provider=model_provider
+        )
+        print_trading_output(result)
+    else:
+        # Regular flow - prompt user to select analysts
+        selected_analysts = None
+        choices = questionary.checkbox(
+            "Select your AI analysts.",
+            choices=[questionary.Choice(display, value=value) for display, value in ANALYST_ORDER],
+            instruction="\n\nInstructions: \n1. Press Space to select/unselect analysts.\n2. Press 'a' to select/unselect all.\n3. Press Enter when done to run the hedge fund.\n",
+            validate=lambda x: len(x) > 0 or "You must select at least one analyst.",
+            style=questionary.Style(
+                [
+                    ("checkbox-selected", "fg:green"),
+                    ("selected", "fg:green noinherit"),
+                    ("highlighted", "noinherit"),
+                    ("pointer", "noinherit"),
+                ]
+            ),
+        ).ask()
+        
+        if not choices:
+            print("\n\nInterrupt received. Exiting...")
+            sys.exit(0)
+        else:
+            selected_analysts = choices
+            print(f"\nSelected analysts: {', '.join(Fore.GREEN + choice.title().replace('_', ' ') + Style.RESET_ALL for choice in choices)}\n")
+
+        # Create workflow for visualization if requested
+        if args.show_agent_graph:
+            workflow = create_workflow(selected_analysts)
+            app = workflow.compile()
+            
+            file_path = ""
+            for selected_analyst in selected_analysts:
+                file_path += selected_analyst + "_"
+            file_path += "graph.png"
+            save_graph_as_png(app, file_path)
+
+        # Run the hedge fund
+        result = run_hedge_fund(
+            tickers=tickers,
+            start_date=start_date,
+            end_date=end_date,
+            portfolio=portfolio,
+            show_reasoning=args.show_reasoning,
+            selected_analysts=selected_analysts,
+            model_name=model_choice,
+            model_provider=model_provider,
+        )
+        print_trading_output(result)

@@ -10,6 +10,7 @@ from agents.sentiment import sentiment_agent
 from agents.technicals import technical_analyst_agent
 from agents.valuation import valuation_agent
 from agents.warren_buffett import warren_buffett_agent
+from agents.wsb_agent import wsb_agent
 
 # Define analyst configuration - single source of truth
 ANALYST_CONFIG = {
@@ -43,25 +44,30 @@ ANALYST_CONFIG = {
         "agent_func": warren_buffett_agent,
         "order": 5,
     },
+    "wsb": {
+        "display_name": "WallStreetBets",
+        "agent_func": wsb_agent,
+        "order": 6,
+    },
     "technical_analyst": {
         "display_name": "Technical Analyst",
         "agent_func": technical_analyst_agent,
-        "order": 4,
+        "order": 7,
     },
     "fundamentals_analyst": {
         "display_name": "Fundamentals Analyst",
         "agent_func": fundamentals_agent,
-        "order": 5,
+        "order": 8,
     },
     "sentiment_analyst": {
         "display_name": "Sentiment Analyst",
         "agent_func": sentiment_agent,
-        "order": 6,
+        "order": 9,
     },
     "valuation_analyst": {
         "display_name": "Valuation Analyst",
         "agent_func": valuation_agent,
-        "order": 7,
+        "order": 10,
     },
 }
 

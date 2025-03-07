@@ -12,6 +12,7 @@ class ModelProvider(str, Enum):
     OPENAI = "OpenAI"
     GROQ = "Groq"
     ANTHROPIC = "Anthropic"
+    GEMINI = "Gemini"  # Add Gemini provider
 
 
 class LLMModel(BaseModel):
@@ -76,6 +77,11 @@ AVAILABLE_MODELS = [
         model_name="o3-mini",
         provider=ModelProvider.OPENAI
     ),
+    LLMModel(
+        display_name="[gemini] gemini-2.0-flash",
+        model_name="gemini-2.0-flash",
+        provider=ModelProvider.GEMINI
+    ),
 ]
 
 # Create LLM_ORDER in the format expected by the UI
@@ -107,3 +113,15 @@ def get_model(model_name: str, model_provider: ModelProvider) -> ChatOpenAI | Ch
             print(f"API Key Error: Please make sure ANTHROPIC_API_KEY is set in your .env file.")
             raise ValueError("Anthropic API key not found.  Please make sure ANTHROPIC_API_KEY is set in your .env file.")
         return ChatAnthropic(model=model_name, api_key=api_key)
+    elif model_provider == ModelProvider.GEMINI:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            print(f"API Key Error: Please make sure GEMINI_API_KEY is set in your .env file.")
+            raise ValueError("Gemini API key not found. Please make sure GEMINI_API_KEY is set in your .env file.")
+        
+        # Using OpenAI compatibility layer for Gemini
+        return ChatOpenAI(
+            api_key=api_key,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+            model=model_name
+        )

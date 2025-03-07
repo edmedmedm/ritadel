@@ -1,30 +1,8 @@
-# AI Hedge Fund
+# 🤖 AI Hedge Fund
 
-This is a proof of concept for an AI-powered hedge fund.  The goal of this project is to explore the use of AI to make trading decisions.  This project is for **educational** purposes only and is not intended for real trading or investment.
+An experimental AI-powered hedge fund that simulates investment decisions using multiple AI agents with distinct investment philosophies and strategies. This project demonstrates the potential of AI in financial analysis and decision-making.
 
-This system employs several agents working together:
-
-1. Ben Graham Agent - The godfather of value investing, only buys hidden gems with a margin of safety
-2. Bill Ackman Agent - An activist investors, takes bold positions and pushes for change
-3. Cathie Wood Agent - The queen of growth investing, believes in the power of innovation and disruption
-4. Warren Buffett Agent - The oracle of Omaha, seeks wonderful companies at a fair price
-5. Charlie Munger Agent - Warren Buffett's partner, only buys wonderful businesses at fair prices
-6. Nancy Pelosi Agent - Analyzes stocks based on policy impacts, government contracts, and regulatory changes
-7. Valuation Agent - Calculates the intrinsic value of a stock and generates trading signals
-8. Sentiment Agent - Analyzes market sentiment and generates trading signals
-9. Fundamentals Agent - Analyzes fundamental data and generates trading signals
-10. Technicals Agent - Analyzes technical indicators and generates trading signals
-11. Risk Manager - Calculates risk metrics and sets position limits
-12. Portfolio Manager - Makes final trading decisions and generates orders
-
-<img width="1117" alt="Screenshot 2025-02-09 at 11 26 14 AM" src="https://github.com/user-attachments/assets/16509cc2-4b64-4c67-8de6-00d224893d58" />
-
-
-**Note**: the system simulates trading decisions, it does not actually trade.
-
-[![Twitter Follow](https://img.shields.io/twitter/follow/virattt?style=social)](https://twitter.com/virattt)
-
-## Disclaimer
+## ⚠️ Important Disclaimer
 
 This project is for **educational and research purposes only**.
 
@@ -36,133 +14,190 @@ This project is for **educational and research purposes only**.
 
 By using this software, you agree to use it solely for learning purposes.
 
-## Table of Contents
-- [Setup](#setup)
-- [Usage](#usage)
-  - [Running the Hedge Fund](#running-the-hedge-fund)
-  - [Running the Backtester](#running-the-backtester)
-- [Project Structure](#project-structure)
-- [Contributing](#contributing)
-- [Feature Requests](#feature-requests)
-- [License](#license)
+## 🌟 Features
 
-## Setup
+### 🎭 Multi-Agent Architecture
 
-Clone the repository:
+The system employs several specialized agents, each with unique perspectives and strategies:
+
+#### Value Investors
+- **Warren Buffett Agent** - Seeks wonderful companies at fair prices
+- **Charlie Munger Agent** - Focuses on high-quality businesses with strong moats
+- **Ben Graham Agent** - Hunts for undervalued stocks with margin of safety
+- **Bill Ackman Agent** - Takes activist positions with catalysts for change
+
+#### Growth & Innovation
+- **Cathie Wood Agent** - Specializes in disruptive innovation and growth
+- **WSB Agent** - Focuses on momentum and high-conviction plays
+
+#### Technical & Fundamental
+- **Technical Analyst** - Analyzes price patterns and technical indicators
+- **Fundamental Analyst** - Deep dives into financial statements
+- **Valuation Analyst** - Focuses on intrinsic value calculations
+- **Sentiment Analyst** - Tracks market psychology and social sentiment
+
+#### Policy & Risk
+- **Nancy Pelosi Agent** - Analyzes policy impacts and regulatory changes
+- **Risk Manager** - Monitors risk metrics and position limits
+
+### 🔄 Round Table Discussion
+
+The agents participate in a simulated round table discussion where they:
+1. Present initial positions
+2. Challenge each other's assumptions
+3. Debate key points
+4. Refine their views
+5. Reach a consensus decision
+
+### 📊 Analysis Features
+
+- Real-time financial data analysis
+- Multi-factor decision making
+- Sentiment analysis
+- Technical indicator calculations
+- Risk assessment
+- Position sizing recommendations
+
+## 🛠️ Setup
+
+### Prerequisites
+
+- Python 3.8+
+- Poetry package manager
+- API keys for LLM providers and financial data
+
+### Installation
+
+1. Clone the repository:
 ```bash
 git clone https://github.com/virattt/ai-hedge-fund.git
 cd ai-hedge-fund
 ```
 
-1. Install Poetry (if not already installed):
+2. Install Poetry (if not already installed):
 ```bash
 curl -sSL https://install.python-poetry.org | python3 -
 ```
 
-2. Install dependencies:
+3. Install dependencies:
 ```bash
 poetry install
 ```
 
-3. Set up your environment variables:
+4. Set up environment variables:
 ```bash
-# Create .env file for your API keys
 cp .env.example .env
 ```
 
-4. Set your API keys:
+### 🔑 API Keys Configuration
+
+Configure your API keys in `.env`:
+
 ```bash
-# For running LLMs hosted by openai (gpt-4o, gpt-4o-mini, etc.)
-# Get your OpenAI API key from https://platform.openai.com/
+# OpenAI API Key (for GPT-4, GPT-3.5)
 OPENAI_API_KEY=your-openai-api-key
 
-# For running LLMs hosted by groq (deepseek, llama3, etc.)
-# Get your Groq API key from https://groq.com/
+# Groq API Key (for Mixtral, Llama)
 GROQ_API_KEY=your-groq-api-key
 
-# For getting financial data to power the hedge fund
-# Get your Financial Datasets API key from https://financialdatasets.ai/
+# Anthropic API Key (for Claude)
+ANTHROPIC_API_KEY=your-anthropic-api-key
+
+# Gemini API Key (for Google's Gemini models)
+GEMINI_API_KEY=your-gemini-api-key
+
+# Financial Data API Key
 FINANCIAL_DATASETS_API_KEY=your-financial-datasets-api-key
+
+# Reddit API Configuration (for WSB sentiment analysis)
+REDDIT_CLIENT_ID=your-reddit-client-id
+REDDIT_CLIENT_SECRET=your-reddit-client-secret
+REDDIT_USER_AGENT=your-app-name:v1.0 (by /u/your-username)
 ```
 
-**Important**: You must set `OPENAI_API_KEY`, `GROQ_API_KEY`, or `ANTHROPIC_API_KEY` for the hedge fund to work.  If you want to use LLMs from all providers, you will need to set all API keys.
+**Note**: 
+- You need at least one LLM provider API key (OpenAI, Groq, Anthropic, or Gemini)
+- Free financial data is available for AAPL, GOOGL, MSFT, NVDA, and TSLA
+- Reddit API keys are required for the WSB Agent's sentiment analysis
+- To get Reddit API keys:
+  1. Visit https://www.reddit.com/prefs/apps
+  2. Click "Create App" or "Create Another App"
+  3. Select "script" as the application type
+  4. Fill in the required information
+  5. Use the generated client ID and secret in your .env file
 
-Financial data for AAPL, GOOGL, MSFT, NVDA, and TSLA is free and does not require an API key.
-
-For any other ticker, you will need to set the `FINANCIAL_DATASETS_API_KEY` in the .env file.
-
-## Usage
+## 🚀 Usage
 
 ### Running the Hedge Fund
+
+Basic usage:
 ```bash
 poetry run python src/main.py --ticker AAPL,MSFT,NVDA
 ```
 
-**Example Output:**
-<img width="992" alt="Screenshot 2025-01-06 at 5 50 17 PM" src="https://github.com/user-attachments/assets/e8ca04bf-9989-4a7d-a8b4-34e04666663b" />
-
-You can also specify a `--show-reasoning` flag to print the reasoning of each agent to the console.
-
+With detailed reasoning:
 ```bash
 poetry run python src/main.py --ticker AAPL,MSFT,NVDA --show-reasoning
 ```
-You can optionally specify the start and end dates to make decisions for a specific time period.
 
+With date range:
 ```bash
-poetry run python src/main.py --ticker AAPL,MSFT,NVDA --start-date 2024-01-01 --end-date 2024-03-01 
+poetry run python src/main.py --ticker AAPL,MSFT,NVDA --start-date 2024-01-01 --end-date 2024-03-01
 ```
 
 ### Running the Backtester
 
+Basic backtest:
 ```bash
 poetry run python src/backtester.py --ticker AAPL,MSFT,NVDA
 ```
 
-**Example Output:**
-<img width="941" alt="Screenshot 2025-01-06 at 5 47 52 PM" src="https://github.com/user-attachments/assets/00e794ea-8628-44e6-9a84-8f8a31ad3b47" />
-
-You can optionally specify the start and end dates to backtest over a specific time period.
-
+With date range:
 ```bash
 poetry run python src/backtester.py --ticker AAPL,MSFT,NVDA --start-date 2024-01-01 --end-date 2024-03-01
 ```
 
-## Project Structure 
+## 📁 Project Structure
+
 ```
 ai-hedge-fund/
 ├── src/
-│   ├── agents/                   # Agent definitions and workflow
-│   │   ├── bill_ackman.py        # Bill Ackman agent
-│   │   ├── fundamentals.py       # Fundamental analysis agent
-│   │   ├── nancy_pelosi.py       # Nancy Pelosi agent
-│   │   ├── portfolio_manager.py  # Portfolio management agent
-│   │   ├── risk_manager.py       # Risk management agent
-│   │   ├── sentiment.py          # Sentiment analysis agent
-│   │   ├── technicals.py         # Technical analysis agent
-│   │   ├── valuation.py          # Valuation analysis agent
-│   │   ├── warren_buffett.py     # Warren Buffett agent
-│   ├── tools/                    # Agent tools
-│   │   ├── api.py                # API tools
-│   ├── backtester.py             # Backtesting tools
-│   ├── main.py # Main entry point
-├── pyproject.toml
-├── ...
+│   ├── agents/                  # Agent implementations
+│   │   ├── warren_buffett.py    # Value investing legend
+│   │   ├── cathie_wood.py      # Growth/innovation focus
+│   │   ├── technical.py        # Technical analysis
+│   │   ├── fundamentals.py     # Fundamental analysis
+│   │   └── ...                 # Other agents
+│   ├── round_table/            # Round table discussion
+│   │   ├── engine.py          # Discussion logic
+│   │   ├── display.py         # Output formatting
+│   │   └── main.py           # Entry point
+│   ├── tools/                 # Utility tools
+│   ├── data/                  # Data handling
+│   ├── llm/                   # LLM integration
+│   ├── main.py               # Main entry point
+│   └── backtester.py         # Backtesting system
+├── tests/                    # Test suite
+├── poetry.toml              # Poetry configuration
+└── README.md               # This file
 ```
 
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Make your changes
+4. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+5. Push to the branch (`git push origin feature/AmazingFeature`)
+6. Open a Pull Request
 
-**Important**: Please keep your pull requests small and focused.  This will make it easier to review and merge.
+Please keep pull requests focused and include tests for new functionality.
 
-## Feature Requests
+## 🐛 Bug Reports & Feature Requests
 
-If you have a feature request, please open an [issue](https://github.com/virattt/ai-hedge-fund/issues) and make sure it is tagged with `enhancement`.
+- For bugs, open an issue with the `bug` label
+- For feature requests, open an issue with the `enhancement` label
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

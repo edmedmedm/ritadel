@@ -70,15 +70,21 @@ def portfolio_management_agent(state: AgentState):
         model_provider=state["metadata"]["model_provider"],
     )
 
+    # Convert Pydantic models to dictionaries before storing
+    decisions_dict = {ticker: decision.model_dump() for ticker, decision in result.decisions.items()}
+    
+    # Store the decisions in the state data as dictionaries
+    state["data"]["portfolio_decision"] = decisions_dict
+
     # Create the portfolio management message
     message = HumanMessage(
-        content=json.dumps({ticker: decision.model_dump() for ticker, decision in result.decisions.items()}),
-        name="portfolio_management",
+        content=json.dumps(decisions_dict),
+        name="portfolio_management_agent",
     )
 
     # Print the decision if the flag is set
     if state["metadata"]["show_reasoning"]:
-        show_agent_reasoning({ticker: decision.model_dump() for ticker, decision in result.decisions.items()}, "Portfolio Management Agent")
+        show_agent_reasoning(decisions_dict, "Portfolio Management Agent")
 
     progress.update_status("portfolio_management_agent", None, "Done")
 
