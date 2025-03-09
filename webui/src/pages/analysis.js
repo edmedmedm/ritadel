@@ -580,13 +580,51 @@ export default function Analysis() {
 }
 
 function AnalysisProgress({ progress, tickers, analysts, error, onCancel }) {
+  const [elapsedTime, setElapsedTime] = useState(0);
+  
+  // Track elapsed time
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsedTime(prev => prev + 1);
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
+  
+  // Format time as mm:ss
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  // Calculate overall progress percentage
+  const calculateOverallProgress = () => {
+    let totalItems = tickers.length * analysts.length;
+    let completedPercentage = 0;
+    
+    tickers.forEach(ticker => {
+      analysts.forEach(analyst => {
+        const pct = progress[analyst.value]?.[ticker]?.percent || 0;
+        completedPercentage += pct;
+      });
+    });
+    
+    return Math.round(completedPercentage / totalItems);
+  };
+  
   return (
     <Card>
       <CardContent>
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">
-            Analysis in Progress
-          </Typography>
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Analysis in Progress
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Elapsed time: {formatTime(elapsedTime)} | Overall progress: {calculateOverallProgress()}%
+            </Typography>
+          </Box>
           <Button 
             variant="outlined" 
             color="error" 
@@ -597,6 +635,12 @@ function AnalysisProgress({ progress, tickers, analysts, error, onCancel }) {
           </Button>
         </Box>
         
+        <LinearProgress 
+          variant="determinate" 
+          value={calculateOverallProgress()} 
+          sx={{ mb: 3, height: 10, borderRadius: 5 }}
+        />
+        
         {error ? (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -605,32 +649,62 @@ function AnalysisProgress({ progress, tickers, analysts, error, onCancel }) {
           <Box>
             {tickers.map(ticker => (
               <Box key={ticker} sx={{ mb: 4 }}>
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                <Typography variant="subtitle1" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                  <Box component="span" sx={{ 
+                    width: 10, 
+                    height: 10, 
+                    borderRadius: '50%', 
+                    bgcolor: 'primary.main',
+                    display: 'inline-block',
+                    mr: 1
+                  }}/>
                   {ticker}
                 </Typography>
                 <Grid container spacing={2}>
                   {analysts.map(analyst => {
                     const agentProgress = progress[analyst.value]?.[ticker];
+                    const pct = agentProgress ? agentProgress.percent : 0;
+                    const status = agentProgress ? agentProgress.status : 'Waiting...';
+                    
+                    // Determine color based on progress
+                    let statusColor = '#666'; // default gray
+                    if (pct === 100) statusColor = '#4caf50'; // green
+                    else if (pct > 70) statusColor = '#2196f3'; // blue
+                    else if (pct > 30) statusColor = '#ff9800'; // orange
+                    else if (pct > 0) statusColor = '#f44336'; // red
                     
                     return (
                       <Grid item xs={12} md={6} key={analyst.value}>
-                        <Card variant="outlined" sx={{ mb: 1 }}>
+                        <Card variant="outlined" sx={{ 
+                          mb: 1, 
+                          borderColor: pct === 100 ? 'success.main' : 'divider',
+                          transition: 'all 0.3s',
+                          transform: pct === 100 ? 'translateY(-2px)' : 'none',
+                          boxShadow: pct === 100 ? 2 : 0
+                        }}>
                           <CardContent sx={{ pb: '16px !important' }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                               <Typography variant="subtitle2">
                                 {analyst.label}
                               </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {agentProgress ? `${agentProgress.percent}%` : '0%'}
+                              <Typography variant="body2" sx={{ color: statusColor, fontWeight: 'bold' }}>
+                                {pct}%
                               </Typography>
                             </Box>
                             <LinearProgress 
                               variant="determinate" 
-                              value={agentProgress ? agentProgress.percent : 0} 
-                              sx={{ mb: 1, height: 6, borderRadius: 1 }}
+                              value={pct} 
+                              sx={{ 
+                                mb: 1, 
+                                height: 6, 
+                                borderRadius: 1,
+                                '.MuiLinearProgress-bar': {
+                                  backgroundColor: statusColor
+                                }
+                              }}
                             />
-                            <Typography variant="caption" color="text.secondary">
-                              {agentProgress ? agentProgress.status : 'Waiting...'}
+                            <Typography variant="caption" sx={{ color: statusColor }}>
+                              {status}
                             </Typography>
                           </CardContent>
                         </Card>

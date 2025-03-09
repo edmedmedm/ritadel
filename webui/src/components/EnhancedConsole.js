@@ -1,47 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
-import { Paper, Typography, IconButton, Box, Snackbar, Alert } from '@mui/material';
-import { 
-  Close as CloseIcon, 
-  DragIndicator as DragIcon, 
-  Minimize as MinimizeIcon,
-  MaximizeOutlined as MaximizeIcon,
-  Refresh as RefreshIcon
-} from '@mui/icons-material';
+import { Paper, Typography, IconButton, Box } from '@mui/material';
+import { Close as CloseIcon, DragIndicator as DragIcon } from '@mui/icons-material';
+import dynamic from 'next/dynamic';
 
-export default function EnhancedConsole() {
+// Import Draggable component
+const Draggable = dynamic(() => import('react-draggable'), { ssr: false });
+
+// Our client-side only component
+function ConsoleComponent() {
   const [messages, setMessages] = useState(['Console initialized']);
   const [connected, setConnected] = useState(false);
-  const [minimized, setMinimized] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [error, setError] = useState(null);
-  const [dragging, setDragging] = useState(false);
   const consoleRef = useRef(null);
-  const dragRef = useRef(null);
   
-  // Initialize WebSocket connection
+  // WebSocket connection
   useEffect(() => {
     console.log('Console mounted');
-    connectWebSocket();
-    
-    return () => {
-      if (dragRef.current?.ws) {
-        dragRef.current.ws.close();
-      }
-    };
-  }, []);
-  
-  const connectWebSocket = () => {
-    setMessages(prev => [...prev, 'Attempting WebSocket connection...']);
     
     try {
       const ws = new WebSocket(`ws://localhost:5000/ws/logs`);
       
-      // Store the WebSocket connection in a ref for cleanup
-      dragRef.current = { ws };
-      
       ws.onopen = () => {
         setConnected(true);
-        setMessages(prev => [...prev, '✅ WebSocket connected successfully']);
+        setMessages(prev => [...prev, 'WebSocket connected']);
       };
       
       ws.onmessage = (event) => {
@@ -49,7 +29,7 @@ export default function EnhancedConsole() {
           const data = JSON.parse(event.data);
           setMessages(prev => [...prev, data.message]);
           
-          // Auto-scroll to bottom
+          // Auto-scroll
           if (consoleRef.current) {
             consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
           }
@@ -58,193 +38,93 @@ export default function EnhancedConsole() {
         }
       };
       
-      ws.onerror = (e) => {
-        setMessages(prev => [...prev, '❌ WebSocket error occurred']);
-        setError('WebSocket connection failed. Is the API server running?');
+      ws.onerror = () => {
         setConnected(false);
+        setMessages(prev => [...prev, 'WebSocket error']);
       };
       
       ws.onclose = () => {
         setConnected(false);
-        setMessages(prev => [...prev, '⚠️ WebSocket connection closed']);
+        setMessages(prev => [...prev, 'WebSocket closed']);
       };
+      
+      return () => ws.close();
     } catch (error) {
-      setMessages(prev => [...prev, `❌ WebSocket setup error: ${error.message}`]);
-      setError(error.message);
+      setMessages(prev => [...prev, `WebSocket setup error: ${error.message}`]);
     }
-  };
+  }, []);
   
-  // Setup draggable functionality
-  useEffect(() => {
-    if (!dragRef.current) return;
+  // Add this function to color-code log messages
+  const formatMessageWithColors = (msg) => {
+    if (typeof msg !== 'string') return msg;
     
-    const handleMouseDown = (e) => {
-      if (!e.target.closest('.drag-handle')) return;
-      
-      setDragging(true);
-      
-      // Store the initial click offset
-      dragRef.current.offsetX = e.clientX - position.x;
-      dragRef.current.offsetY = e.clientY - position.y;
-      
-      // Prevent text selection during drag
-      e.preventDefault();
-    };
-    
-    const handleMouseMove = (e) => {
-      if (!dragging) return;
-      
-      // Calculate new position
-      const newX = e.clientX - dragRef.current.offsetX;
-      const newY = e.clientY - dragRef.current.offsetY;
-      
-      // Keep console within viewport
-      const maxX = window.innerWidth - (minimized ? 200 : 400);
-      const maxY = window.innerHeight - (minimized ? 40 : 300);
-      
-      setPosition({
-        x: Math.max(0, Math.min(newX, maxX)),
-        y: Math.max(0, Math.min(newY, maxY))
-      });
-    };
-    
-    const handleMouseUp = () => {
-      setDragging(false);
-    };
-    
-    document.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    
-    return () => {
-      document.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [dragging, position, minimized]);
+    // Add color coding for common log patterns
+    return msg
+      .replace(/error|exception|failed|failure/gi, match => `<span style="color: #ff5555;">${match}</span>`)
+      .replace(/warning|warn/gi, match => `<span style="color: #ffaa55;">${match}</span>`)
+      .replace(/success|completed|done/gi, match => `<span style="color: #55ff55;">${match}</span>`)
+      .replace(/starting|begin|analyzing/gi, match => `<span style="color: #55aaff;">${match}</span>`);
+  }
   
   return (
-    <>
+    <Draggable
+      handle=".console-handle"
+      defaultPosition={{ x: 20, y: 20 }}
+    >
       <Paper 
-        elevation={3}
+        elevation={5}
         sx={{
           position: 'fixed',
-          bottom: position.y,
-          right: position.x,
-          width: minimized ? 200 : 400,
-          height: minimized ? 40 : 300,
+          bottom: 20,
+          right: 20,
+          width: 550,  // Wider for more content
+          height: 400,  // Taller to see more logs
           zIndex: 9999,
           overflow: 'hidden',
-          backgroundColor: '#000',
-          color: '#0f0',
-          border: connected ? '1px solid #0f0' : '1px solid red',
-          borderRadius: 1,
-          fontFamily: 'monospace',
-          transition: 'height 0.2s ease-in-out, width 0.2s ease-in-out',
-          resize: !minimized ? 'both' : 'none',
-          cursor: dragging ? 'grabbing' : 'default'
+          backgroundColor: '#101010', // Slightly lighter black for better readability
+          color: '#33ff33', // Brighter green
+          border: '2px solid #33ff33', // Green terminal-style border
+          borderRadius: '4px',
+          fontFamily: 'Consolas, monospace',
+          boxShadow: '0 0 15px rgba(0, 50, 0, 0.5)' // Subtle green glow
         }}
       >
         <Box 
-          className="drag-handle"
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            p: 0.5,
-            pl: 1,
-            backgroundColor: connected ? '#003300' : '#330000',
-            borderBottom: '1px solid',
-            borderColor: connected ? 'success.main' : 'error.main',
-            cursor: 'grab',
-            userSelect: 'none'
+          className="console-handle"
+          sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            bgcolor: '#002200', // Dark green header
+            p: 1,
+            cursor: 'move'
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <DragIcon fontSize="small" sx={{ mr: 1, color: '#aaa' }} />
-            <Typography variant="subtitle2" sx={{ color: '#fff', fontSize: '0.8rem' }}>
-              Console {connected ? '(Connected)' : '(Disconnected)'}
-            </Typography>
-          </Box>
-          <Box>
-            <IconButton 
-              size="small" 
-              sx={{ color: '#aaa', p: 0.5 }} 
-              onClick={() => connectWebSocket()}
-              title="Reconnect"
-            >
-              <RefreshIcon fontSize="small" />
-            </IconButton>
-            <IconButton 
-              size="small" 
-              sx={{ color: '#aaa', p: 0.5 }} 
-              onClick={() => setMinimized(!minimized)}
-              title={minimized ? 'Maximize' : 'Minimize'}
-            >
-              {minimized ? <MaximizeIcon fontSize="small" /> : <MinimizeIcon fontSize="small" />}
-            </IconButton>
-            <IconButton 
-              size="small" 
-              sx={{ color: '#aaa', p: 0.5 }} 
-              onClick={() => setMessages([])}
-              title="Clear logs"
-            >
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </Box>
+          <Typography sx={{ color: '#fff', fontWeight: 'bold' }}>
+            Hedge Fund AI Console {connected ? '(Connected)' : '(Disconnected)'}
+          </Typography>
+          <IconButton size="small" sx={{ color: '#fff' }} onClick={() => setMessages([])}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
         </Box>
         
-        {!minimized && (
-          <Box 
-            ref={consoleRef}
-            sx={{
-              height: 'calc(100% - 32px)',
-              overflowY: 'auto',
-              p: 1,
-              '&::-webkit-scrollbar': {
-                width: '8px',
-              },
-              '&::-webkit-scrollbar-track': {
-                background: '#111',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                background: '#333',
-                borderRadius: '4px',
-              },
-              '&::-webkit-scrollbar-thumb:hover': {
-                background: '#555',
-              }
-            }}
-          >
-            {messages.map((msg, i) => (
-              <Typography 
-                key={i} 
-                variant="body2" 
-                sx={{ 
-                  fontSize: '0.75rem',
-                  mb: 0.5,
-                  fontFamily: 'monospace',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word'
-                }}
-              >
-                {msg}
-              </Typography>
-            ))}
-          </Box>
-        )}
+        <Box 
+          ref={consoleRef}
+          sx={{ 
+            height: 'calc(100% - 40px)', 
+            overflowY: 'auto', 
+            p: 1 
+          }}
+        >
+          {messages.map((msg, i) => (
+            <Typography key={i} variant="body2" sx={{ fontSize: '12px' }}
+              dangerouslySetInnerHTML={{ __html: formatMessageWithColors(msg) }}
+            />
+          ))}
+        </Box>
       </Paper>
-      
-      <Snackbar 
-        open={!!error} 
-        autoHideDuration={6000} 
-        onClose={() => setError(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
-          {error}
-        </Alert>
-      </Snackbar>
-    </>
+    </Draggable>
   );
-} 
+}
+
+// Export with SSR disabled
+export default dynamic(() => Promise.resolve(ConsoleComponent), { ssr: false }); 
