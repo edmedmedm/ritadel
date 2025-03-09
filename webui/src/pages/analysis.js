@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Grid, Typography, Card, CardContent, TextField, Button, Autocomplete, Checkbox, Chip, FormControlLabel, FormGroup, Divider, Stepper, Step, StepLabel, StepContent, Paper, LinearProgress, Alert } from '@mui/material';
 import { Search as SearchIcon, Send as SendIcon, Check as CheckIcon } from '@mui/icons-material';
 
@@ -45,8 +45,86 @@ export default function Analysis() {
   const [analysisError, setAnalysisError] = useState(null);
   const [progress, setProgress] = useState({});
   const [analysisResults, setAnalysisResults] = useState(null);
+  const [isFormValid, setIsFormValid] = useState(false);
+
+  useEffect(() => {
+    let valid = false;
+    
+    // Step-specific validation
+    switch (activeStep) {
+      case 0: // Select Stocks step
+        // For the first step, only ticker is required
+        valid = tickers.trim() !== '' && 
+               // Optional date validation
+               (!startDate || isValidDate(startDate)) && 
+               (!endDate || isValidDate(endDate)) && 
+               (!(startDate && endDate) || new Date(startDate) <= new Date(endDate));
+        break;
+        
+      case 1: // Select LLM Model step
+        // For the second step, model must be selected
+        valid = selectedModel !== null;
+        break;
+        
+      case 2: // Choose Analysts step
+        // For the third step, at least one analyst must be selected
+        valid = selectedAnalysts.length > 0;
+        break;
+        
+      default:
+        valid = false;
+    }
+    
+    setIsFormValid(valid);
+  }, [activeStep, tickers, selectedModel, selectedAnalysts, startDate, endDate]);
 
   const handleNext = () => {
+    // Skip full validation during intermediate steps
+    // We only need to validate the current step's fields
+    
+    // For first step, just check ticker input
+    if (activeStep === 0) {
+      if (!tickers.trim()) {
+        setAnalysisError("Please enter at least one ticker symbol");
+        return;
+      }
+      
+      // Only do date validation if dates were entered
+      if (startDate && !isValidDate(startDate)) {
+        setAnalysisError("Please enter a valid start date (YYYY-MM-DD)");
+        return;
+      }
+      
+      if (endDate && !isValidDate(endDate)) {
+        setAnalysisError("Please enter a valid end date (YYYY-MM-DD)");
+        return;
+      }
+      
+      if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+        setAnalysisError("Start date cannot be after end date");
+        return;
+      }
+    }
+    
+    // For second step, just check model selection
+    else if (activeStep === 1) {
+      if (!selectedModel) {
+        setAnalysisError("Please select a model");
+        return;
+      }
+    }
+    
+    // For third step, check analyst selection
+    else if (activeStep === 2) {
+      if (selectedAnalysts.length === 0) {
+        setAnalysisError("Please select at least one analyst");
+        return;
+      }
+    }
+    
+    // Clear any previous errors
+    setAnalysisError(null);
+    // Move to next step
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
@@ -59,101 +137,14 @@ export default function Analysis() {
   };
 
   const handleStartAnalysis = () => {
-    setIsAnalyzing(true);
-    setAnalysisError(null);
-    
-    // Simulated progress updates - in a real app, this would come from an API
-    const ticker_list = tickers.split(',').map(t => t.trim());
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        const agentKeys = selectedAnalysts.map(a => a.value);
-        const newProgress = { ...prev };
-        
-        // Randomly update progress for a random ticker and agent
-        const randomTicker = ticker_list[Math.floor(Math.random() * ticker_list.length)];
-        const randomAgent = agentKeys[Math.floor(Math.random() * agentKeys.length)];
-        
-        if (!newProgress[randomAgent]) {
-          newProgress[randomAgent] = {};
-        }
-        
-        if (!newProgress[randomAgent][randomTicker]) {
-          newProgress[randomAgent][randomTicker] = {
-            status: 'Initializing...',
-            percent: 0
-          };
-        }
-        
-        const currentStatus = newProgress[randomAgent][randomTicker];
-        
-        // Progress logic
-        if (currentStatus.percent < 100) {
-          const increment = Math.floor(Math.random() * 10) + 5;
-          const newPercent = Math.min(currentStatus.percent + increment, 100);
-          
-          let status = currentStatus.status;
-          if (newPercent < 30) status = 'Fetching data...';
-          else if (newPercent < 60) status = 'Analyzing...';
-          else if (newPercent < 90) status = 'Generating report...';
-          else status = 'Finalizing...';
-          
-          newProgress[randomAgent][randomTicker] = {
-            status,
-            percent: newPercent
-          };
-        }
-        
-        // Check if all are complete
-        let allComplete = true;
-        for (const agent of agentKeys) {
-          if (!newProgress[agent]) {
-            allComplete = false;
-            break;
-          }
-          
-          for (const ticker of ticker_list) {
-            if (!newProgress[agent][ticker] || newProgress[agent][ticker].percent < 100) {
-              allComplete = false;
-              break;
-            }
-          }
-        }
-        
-        if (allComplete) {
-          clearInterval(timer);
-          setTimeout(() => {
-            setIsAnalyzing(false);
-            setActiveStep(3); // Move to results step
-            
-            // Generate simulated results for demo purpose
-            const mockResults = {
-              tickers: ticker_list,
-              date: new Date().toISOString().split('T')[0],
-              signals: ticker_list.reduce((acc, ticker) => {
-                acc[ticker] = {
-                  overallSignal: Math.random() > 0.5 ? 'bullish' : (Math.random() > 0.5 ? 'bearish' : 'neutral'),
-                  confidence: Math.floor(Math.random() * 40) + 60,
-                  analysts: selectedAnalysts.map(analyst => ({
-                    name: analyst.label,
-                    signal: Math.random() > 0.6 ? 'bullish' : (Math.random() > 0.5 ? 'bearish' : 'neutral'),
-                    confidence: Math.floor(Math.random() * 40) + 60,
-                    reasoning: `Analysis based on ${selectedModel?.label || 'AI model'} evaluation.`
-                  }))
-                };
-                return acc;
-              }, {})
-            };
-            
-            setAnalysisResults(mockResults);
-          }, 1000);
-        }
-        
-        return newProgress;
-      });
-    }, 300);
-    
-    // Cleanup
-    return () => clearInterval(timer);
+    // Do full validation before starting analysis
+    if (validateInputs()) {
+      setIsAnalyzing(true);
+      setAnalysisError(null);
+      
+      // Rest of your analysis logic
+      // ...
+    }
   };
   
   const handleSelectAllAnalysts = () => {
@@ -164,18 +155,55 @@ export default function Analysis() {
     }
   };
 
-  const isStepValid = (step) => {
-    switch (step) {
-      case 0:
-        return tickers.trim() !== '' && startDate && endDate;
-      case 1:
-        return selectedModel !== null;
-      case 2:
-        return selectedAnalysts.length > 0;
-      default:
-        return true;
+  const validateInputs = () => {
+    if (!tickers.trim()) {
+      setAnalysisError("Please enter at least one ticker symbol");
+      return false;
     }
+    
+    if (!selectedModel) {
+      setAnalysisError("Please select a model");
+      return false;
+    }
+    
+    if (selectedAnalysts.length === 0) {
+      setAnalysisError("Please select at least one analyst");
+      return false;
+    }
+    
+    // Date validation is no longer required
+    // We'll keep very basic validation only if dates are provided
+    if (startDate && !isValidDate(startDate)) {
+      setAnalysisError("Please enter a valid start date (YYYY-MM-DD)");
+      return false;
+    }
+    
+    if (endDate && !isValidDate(endDate)) {
+      setAnalysisError("Please enter a valid end date (YYYY-MM-DD)");
+      return false;
+    }
+    
+    // Only validate date order if both are provided
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+      setAnalysisError("Start date cannot be after end date");
+      return false;
+    }
+    
+    return true;
   };
+
+  const getDefaultDates = () => {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    
+    return {
+      endDate: today.toISOString().split('T')[0],  // YYYY-MM-DD format
+      startDate: thirtyDaysAgo.toISOString().split('T')[0]
+    };
+  };
+
+  const defaults = getDefaultDates();
 
   const steps = [
     {
@@ -194,22 +222,22 @@ export default function Analysis() {
           />
           <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
             <TextField
-              label="Start Date"
-              type="date"
+              label="Start Date (Optional)"
               fullWidth
               margin="normal"
-              InputLabelProps={{ shrink: true }}
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
+              placeholder={defaults.startDate}
+              helperText={`Leave blank to use default (${defaults.startDate})`}
             />
             <TextField
-              label="End Date"
-              type="date"
+              label="End Date (Optional)"
               fullWidth
               margin="normal"
-              InputLabelProps={{ shrink: true }}
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
+              placeholder={defaults.endDate}
+              helperText={`Leave blank to use default (${defaults.endDate})`}
             />
           </Box>
           <FormGroup sx={{ mt: 2 }}>
@@ -258,47 +286,70 @@ export default function Analysis() {
       content: (
         <Box sx={{ mt: 2 }}>
           <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              Select analysts to evaluate your stocks
+            <Typography variant="subtitle2">
+              Select AI analysts to evaluate your stocks
             </Typography>
-            <Button size="small" onClick={handleSelectAllAnalysts}>
+            <Button 
+              size="small" 
+              onClick={handleSelectAllAnalysts}
+              variant="outlined"
+            >
               {selectedAnalysts.length === analystOptions.length ? 'Deselect All' : 'Select All'}
             </Button>
           </Box>
           
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: '300px', overflowY: 'auto', pr: 1 }}>
+          <Grid container spacing={2}>
             {analystOptions.map((analyst) => (
-              <Card 
-                key={analyst.value} 
-                variant="outlined" 
-                sx={{ 
-                  borderColor: selectedAnalysts.some(a => a.value === analyst.value) ? 'primary.main' : 'divider',
-                  bgcolor: selectedAnalysts.some(a => a.value === analyst.value) ? 'action.selected' : 'transparent',
-                  transition: 'all 0.2s',
-                  cursor: 'pointer'
-                }}
-                onClick={() => {
-                  if (selectedAnalysts.some(a => a.value === analyst.value)) {
-                    setSelectedAnalysts(selectedAnalysts.filter(a => a.value !== analyst.value));
-                  } else {
-                    setSelectedAnalysts([...selectedAnalysts, analyst]);
-                  }
-                }}
-              >
-                <CardContent sx={{ py: 1, '&:last-child': { pb: 1 } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box>
-                      <Typography variant="subtitle1">{analyst.label}</Typography>
-                      <Typography variant="body2" color="text.secondary">{analyst.description}</Typography>
-                    </Box>
-                    {selectedAnalysts.some(a => a.value === analyst.value) && (
-                      <CheckIcon color="primary" />
-                    )}
+              <Grid item xs={12} md={6} key={analyst.value}>
+                <Box 
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    p: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                    opacity: selectedAnalysts.some(a => a.value === analyst.value) ? 1 : 0.7,
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      boxShadow: 1,
+                      opacity: 1,
+                    },
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    if (selectedAnalysts.some(a => a.value === analyst.value)) {
+                      setSelectedAnalysts(selectedAnalysts.filter(a => a.value !== analyst.value));
+                    } else {
+                      setSelectedAnalysts([...selectedAnalysts, analyst]);
+                    }
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="subtitle2">
+                      {analyst.label}
+                    </Typography>
+                    <Checkbox 
+                      checked={selectedAnalysts.some(a => a.value === analyst.value)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedAnalysts([...selectedAnalysts, analyst]);
+                        } else {
+                          setSelectedAnalysts(selectedAnalysts.filter(a => a.value !== analyst.value));
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
                   </Box>
-                </CardContent>
-              </Card>
+                  <Typography variant="body2" color="text.secondary">
+                    {analyst.description}
+                  </Typography>
+                </Box>
+              </Grid>
             ))}
-          </Box>
+          </Grid>
           
           <Divider sx={{ my: 3 }} />
           
@@ -366,7 +417,7 @@ export default function Analysis() {
                           variant="contained"
                           onClick={index === steps.length - 1 ? handleStartAnalysis : handleNext}
                           sx={{ mt: 1, mr: 1 }}
-                          disabled={!isStepValid(index)}
+                          disabled={!isFormValid}
                         >
                           {index === steps.length - 1 ? 'Run Analysis' : 'Continue'}
                         </Button>
@@ -577,4 +628,13 @@ function AnalysisResults({ results, onNewAnalysis }) {
       </Grid>
     </Box>
   );
-} 
+}
+
+const isValidDate = (dateString) => {
+  // Basic date validation for YYYY-MM-DD format
+  const regex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!regex.test(dateString)) return false;
+  
+  const date = new Date(dateString);
+  return !isNaN(date.getTime());
+}; 

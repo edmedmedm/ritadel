@@ -8,11 +8,239 @@ import shutil
 import json
 import threading
 from pathlib import Path
+import traceback
+from flask import Flask, request, jsonify, Response
+from flask_cors import CORS
+from dotenv import load_dotenv
+from datetime import datetime, timedelta
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configuration
 WEBUI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "webui")
 DEFAULT_PORT = 3000
 DEFAULT_HOST = "localhost"
+API_PORT = 5000
+
+# Add src directory to Python path
+SRC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src")
+sys.path.append(SRC_DIR)
+
+# Copy .env file to webui directory for Next.js to access via env vars
+def copy_env_file():
+    src_env = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    webui_env = os.path.join(WEBUI_DIR, ".env")
+    if os.path.exists(src_env):
+        shutil.copy2(src_env, webui_env)
+        print(f"Copied .env file to {webui_env}")
+    else:
+        print("Warning: .env file not found in project root")
+
+# API server implementation
+def start_api_server(host=DEFAULT_HOST, port=API_PORT):
+    # Try importing the main hedge fund modules
+    try:
+        from src.main import run_hedge_fund
+        from src.backtester import Backtester
+        from src.llm.models import LLM_ORDER, get_model_info
+        from src.utils.analysts import ANALYST_ORDER
+        # Import any other modules you need
+    except ImportError as e:
+        print(f"Error importing modules from src: {e}")
+        traceback.print_exc()
+        return
+
+    app = Flask(__name__)
+    CORS(app)  # Enable CORS for all routes
+
+    # API endpoints
+    @app.route('/api/models', methods=['GET'])
+    def get_models():
+        """Return available LLM models"""
+        return jsonify({
+            "models": LLM_ORDER
+        })
+
+    @app.route('/api/analysts', methods=['GET'])
+    def get_analysts():
+        """Return available analyst agents"""
+        return jsonify({
+            "analysts": ANALYST_ORDER
+        })
+
+    @app.route('/api/analysis', methods=['POST'])
+    def run_analysis():
+        """Run hedge fund analysis"""
+        try:
+            data = request.get_json()
+            tickers = data.get('tickers', '').split(',')
+            start_date = data.get('startDate')
+            end_date = data.get('endDate')
+            model_name = data.get('modelName')
+            selected_analysts = data.get('selectedAnalysts', [])
+            initial_cash = data.get('initialCash', 100000)
+            is_crypto = data.get('isCrypto', False)
+            
+            # Handle optional dates
+            # Default end_date to today if not provided
+            if not end_date:
+                end_date = datetime.now().strftime('%Y-%m-%d')
+            
+            # Default start_date to 30 days before end_date if not provided
+            if not start_date:
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+                start_date_obj = end_date_obj - timedelta(days=30)
+                start_date = start_date_obj.strftime('%Y-%m-%d')
+            
+            # Setup portfolio
+            portfolio = {
+                "cash": initial_cash,
+                "positions": {},
+                "margin_requirement": 0.5
+            }
+            
+            # Get model provider
+            model_info = get_model_info(model_name)
+            model_provider = model_info.provider.value if model_info else "Unknown"
+            
+            # Run analysis with the dates (either provided or defaults)
+            result = run_hedge_fund(
+                tickers=tickers,
+                start_date=start_date,
+                end_date=end_date,
+                portfolio=portfolio,
+                show_reasoning=True,
+                selected_analysts=selected_analysts,
+                model_name=model_name,
+                model_provider=model_provider,
+                is_crypto=is_crypto
+            )
+            
+            # Format result for JSON response
+            formatted_result = {
+                "ticker_analyses": {},
+                "portfolio": result.get("portfolio", {}),
+            }
+            
+            for ticker, analysis in result.get("ticker_analyses", {}).items():
+                formatted_result["ticker_analyses"][ticker] = {
+                    "signals": analysis.get("signals", {}),
+                    "reasoning": analysis.get("reasoning", {})
+                }
+            
+            return jsonify(formatted_result)
+            
+        except Exception as e:
+            return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
+    @app.route('/api/backtest', methods=['POST'])
+    def run_backtest():
+        """Run backtesting on historical data"""
+        try:
+            data = request.get_json()
+            tickers = data.get('tickers', '').split(',')
+            start_date = data.get('startDate')
+            end_date = data.get('endDate')
+            model_name = data.get('modelName')
+            selected_analysts = data.get('selectedAnalysts', [])
+            initial_capital = data.get('initialCapital', 100000)
+            margin_requirement = data.get('marginRequirement', 0.5)
+            is_crypto = data.get('isCrypto', False)
+            
+            # Handle optional dates
+            from datetime import datetime, timedelta
+            
+            # Default end_date to today if not provided
+            if not end_date:
+                end_date = datetime.now().strftime('%Y-%m-%d')
+            
+            # Default start_date to 3 months before end_date if not provided
+            # For backtesting, we use a longer default period
+            if not start_date:
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+                start_date_obj = end_date_obj - timedelta(days=90)  # 3 months
+                start_date = start_date_obj.strftime('%Y-%m-%d')
+            
+            # Get model provider
+            model_info = get_model_info(model_name)
+            model_provider = model_info.provider.value if model_info else "Unknown"
+            
+            # Run backtest
+            backtester = Backtester(
+                agent=run_hedge_fund,
+                tickers=tickers,
+                start_date=start_date,
+                end_date=end_date,
+                initial_capital=initial_capital,
+                model_name=model_name,
+                model_provider=model_provider,
+                selected_analysts=selected_analysts,
+                initial_margin_requirement=margin_requirement,
+                is_crypto=is_crypto
+            )
+            
+            performance_metrics = backtester.run_backtest()
+            performance_df = backtester.analyze_performance()
+            
+            # Convert dataframe to dict for JSON serialization
+            performance_data = performance_df.to_dict(orient='records')
+            
+            return jsonify({
+                "metrics": performance_metrics,
+                "performance": performance_data
+            })
+            
+        except Exception as e:
+            return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
+    @app.route('/api/round-table', methods=['POST'])
+    def run_round_table():
+        """Run a round table discussion for a ticker"""
+        try:
+            # Import round table module
+            from src.round_table.main import run_round_table
+            
+            data = request.get_json()
+            ticker = data.get('ticker')
+            model_name = data.get('modelName')
+            selected_personas = data.get('selectedPersonas', [])
+            
+            # Get model provider
+            model_info = get_model_info(model_name)
+            model_provider = model_info.provider.value if model_info else "Unknown"
+            
+            # Setup analysis data structure for round table
+            analysis_data = {
+                "tickers": [ticker],
+                "analyst_signals": {}
+            }
+            
+            # Run round table
+            result = run_round_table(
+                data=analysis_data, 
+                model_name=model_name,
+                model_provider=model_provider,
+                show_reasoning=True
+            )
+            
+            return jsonify(result)
+            
+        except Exception as e:
+            return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
+    @app.route('/api/env', methods=['GET'])
+    def get_env_vars():
+        """Return relevant environment variables (without exposing sensitive API keys)"""
+        return jsonify({
+            "openai_api_configured": bool(os.getenv("OPENAI_API_KEY")),
+            "anthropic_api_configured": bool(os.getenv("ANTHROPIC_API_KEY")),
+            "groq_api_configured": bool(os.getenv("GROQ_API_KEY")),
+            "gemini_api_configured": bool(os.getenv("GEMINI_API_KEY")),
+        })
+
+    print(f"Starting API server at http://{host}:{port}")
+    app.run(host=host, port=port, debug=True, use_reloader=False)
 
 def check_node_installed():
     """Check if Node.js and npm are installed."""
@@ -137,7 +365,10 @@ def dev_server(host=DEFAULT_HOST, port=DEFAULT_PORT, open_browser=True):
     
     # Create a .env.local file with the API URL
     with open(os.path.join(WEBUI_DIR, ".env.local"), "w") as f:
-        f.write(f"NEXT_PUBLIC_API_URL=http://{host}:5000\n")
+        f.write(f"NEXT_PUBLIC_API_URL=http://{host}:{API_PORT}\n")
+    
+    # Copy .env file for web UI access
+    copy_env_file()
     
     # Start the dev server
     print(f"Starting Next.js dev server on http://{host}:{port}")
@@ -176,116 +407,72 @@ def build_production():
     )
     print("Production build created!")
 
-def start_api_server(host="localhost", port=5000):
-    """Start the API server that the web UI will communicate with."""
-    from flask import Flask, request, jsonify
-    from flask_cors import CORS
-    
-    # Import your hedge fund functions
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from main import run_hedge_fund
-    
-    app = Flask(__name__)
-    CORS(app)
-    
-    @app.route('/api/run-analysis', methods=['POST'])
-    def api_run_analysis():
-        data = request.json
-        tickers = data.get('tickers', [])
-        start_date = data.get('startDate', '')
-        end_date = data.get('endDate', '')
-        selected_analysts = data.get('selectedAnalysts', [])
-        model_name = data.get('modelName', 'gpt-4o')
-        model_provider = data.get('modelProvider', 'OpenAI')
-        
-        # Create portfolio structure
-        portfolio = {
-            "cash": data.get('initialCash', 100000),
-            "margin_requirement": data.get('marginRequirement', 0),
-            "positions": {ticker: {"long": 0, "short": 0, "long_cost_basis": 0.0, "short_cost_basis": 0.0} for ticker in tickers},
-            "realized_gains": {ticker: {"long": 0.0, "short": 0.0} for ticker in tickers}
-        }
-        
-        # Run the analysis
-        result = run_hedge_fund(
-            tickers=tickers,
-            start_date=start_date,
-            end_date=end_date,
-            portfolio=portfolio,
-            show_reasoning=data.get('showReasoning', True),
-            selected_analysts=selected_analysts,
-            model_name=model_name,
-            model_provider=model_provider,
-            is_crypto=data.get('isCrypto', False)
-        )
-        
-        return jsonify(result)
-    
-    # Add endpoints for backtest, round-table, etc.
-    
-    print(f"Starting API server on http://{host}:{port}")
-    app.run(host=host, port=port, debug=True)
-
 def setup_webui():
-    """Set up the web UI by copying template files."""
-    if not os.path.exists(WEBUI_DIR):
-        os.makedirs(WEBUI_DIR, exist_ok=True)
+    """Set up the web UI directory structure and initial files."""
+    # Create the webui directory if it doesn't exist
+    os.makedirs(WEBUI_DIR, exist_ok=True)
     
-    # Create package.json if it doesn't exist
-    package_json_path = os.path.join(WEBUI_DIR, "package.json")
-    if not os.path.exists(package_json_path):
-        # Define Next.js starter package.json
-        package_json = {
-            "name": "hedge-fund-ai-webui",
-            "version": "0.1.0",
-            "private": True,
-            "scripts": {
-                "dev": "next dev",
-                "build": "next build",
-                "start": "next start",
-                "lint": "next lint"
-            },
-            "dependencies": {
-                "@emotion/react": "^11.11.1",
-                "@emotion/styled": "^11.11.0",
-                "@mui/icons-material": "^5.14.16",
-                "@mui/material": "^5.14.16",
-                "axios": "^1.6.0",
-                "chart.js": "^4.4.0",
-                "framer-motion": "^10.16.4",
-                "next": "14.0.1",
-                "react": "^18.2.0",
-                "react-chartjs-2": "^5.2.0",
-                "react-dom": "^18.2.0",
-                "react-syntax-highlighter": "^15.5.0",
-                "recharts": "^2.9.2"
-            },
-            "devDependencies": {
-                "@types/node": "^20.8.10",
-                "@types/react": "^18.2.35",
-                "@types/react-dom": "^18.2.14",
-                "autoprefixer": "^10.4.16",
-                "eslint": "^8.53.0",
-                "eslint-config-next": "14.0.1",
-                "postcss": "^8.4.31",
-                "tailwindcss": "^3.3.5",
-                "typescript": "^5.2.2"
-            }
-        }
-        
-        with open(package_json_path, "w") as f:
-            json.dump(package_json, f, indent=2)
-    
-    # Create directory structure
+    # Create various subdirectories
     os.makedirs(os.path.join(WEBUI_DIR, "src", "pages"), exist_ok=True)
     os.makedirs(os.path.join(WEBUI_DIR, "src", "components"), exist_ok=True)
     os.makedirs(os.path.join(WEBUI_DIR, "src", "theme"), exist_ok=True)
     os.makedirs(os.path.join(WEBUI_DIR, "src", "styles"), exist_ok=True)
     os.makedirs(os.path.join(WEBUI_DIR, "public"), exist_ok=True)
     
-    # Create a global CSS file
-    with open(os.path.join(WEBUI_DIR, "src", "styles", "globals.css"), "w") as f:
-        f.write("""
+    # Copy .env file for web UI access
+    copy_env_file()
+    
+    # Create a basic package.json if it doesn't exist
+    if not os.path.exists(os.path.join(WEBUI_DIR, "package.json")):
+        with open(os.path.join(WEBUI_DIR, "package.json"), "w") as f:
+            json.dump({
+                "name": "hedge-fund-ai-webui",
+                "version": "0.1.0",
+                "private": True,
+                "scripts": {
+                    "dev": "next dev",
+                    "build": "next build",
+                    "start": "next start",
+                    "lint": "next lint"
+                },
+                "dependencies": {
+                    "@emotion/react": "^11.11.1",
+                    "@emotion/styled": "^11.11.0",
+                    "@mui/icons-material": "^5.14.16",
+                    "@mui/material": "^5.14.16",
+                    "axios": "^1.6.0",
+                    "chart.js": "^4.4.0",
+                    "framer-motion": "^10.16.4",
+                    "next": "14.0.1",
+                    "react": "^18.2.0",
+                    "react-chartjs-2": "^5.2.0",
+                    "react-dom": "^18.2.0",
+                    "react-syntax-highlighter": "^15.5.0",
+                    "recharts": "^2.9.2",
+                    "notistack": "^3.0.1"
+                },
+                "devDependencies": {
+                    "@types/node": "^20.8.10",
+                    "@types/react": "^18.2.35",
+                    "@types/react-dom": "^18.2.14",
+                    "autoprefixer": "^10.4.16",
+                    "eslint": "^8.53.0",
+                    "eslint-config-next": "14.0.1",
+                    "postcss": "^8.4.31",
+                    "tailwindcss": "^3.3.5",
+                    "typescript": "^5.2.2"
+                },
+                "description": "A modern web interface for the AI-driven hedge fund analysis tool.",
+                "main": "index.js",
+                "keywords": [],
+                "author": "",
+                "license": "ISC"
+            }, f, indent=2)
+    
+    # Create a basic globals.css if it doesn't exist
+    if not os.path.exists(os.path.join(WEBUI_DIR, "src", "styles", "globals.css")):
+        with open(os.path.join(WEBUI_DIR, "src", "styles", "globals.css"), "w") as f:
+            f.write("""
 html,
 body {
   padding: 0;
@@ -321,6 +508,33 @@ a {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
 }
+
+.MuiPopover-paper {
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+.chart-container {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.card-hover {
+  transition: all 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #3f8cff 0%, #6ba7ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
         """.strip())
     
     print(f"Web UI template set up in {WEBUI_DIR}")
@@ -336,25 +550,28 @@ def main():
     parser.add_argument("--api", action="store_true", help="Start the API server")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="Port for the web server")
     parser.add_argument("--host", default=DEFAULT_HOST, help="Host for the web server")
+    parser.add_argument("--api-port", type=int, default=API_PORT, help="Port for the API server")
     
     args = parser.parse_args()
     
-    # Check if Node.js is installed
-    if not check_node_installed():
-        print("Node.js and npm are required to run the web UI.")
-        print("Please install Node.js from https://nodejs.org/")
-        return 1
+    # Check if Node.js is installed for web UI functions
+    if args.dev or args.build or args.setup:
+        if not check_node_installed():
+            print("Node.js and npm are required to run the web UI.")
+            print("Please install Node.js from https://nodejs.org/")
+            return 1
     
     # Setup the web UI if requested
     if args.setup:
         setup_webui()
         return 0
     
-    # Start the API server in a separate thread if requested
-    if args.api:
+    # Start the API server in a separate thread
+    api_thread = None
+    if args.api or args.dev:
         api_thread = threading.Thread(
             target=start_api_server,
-            kwargs={"host": args.host, "port": 5000}
+            kwargs={"host": args.host, "port": args.api_port}
         )
         api_thread.daemon = True
         api_thread.start()
@@ -367,6 +584,16 @@ def main():
     # Build for production if requested
     if args.build:
         build_production()
+        return 0
+    
+    # If only API server was requested, keep it running
+    if args.api and api_thread:
+        print("API server running. Press Ctrl+C to stop.")
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\nShutting down API server...")
         return 0
     
     # If no action specified, show help
