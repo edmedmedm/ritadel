@@ -86,6 +86,9 @@ npm run dev
 
 Visit http://localhost:3000 to access the web interface.
 
+### Round Table conference output example (CLI) -
+![image](https://github.com/user-attachments/assets/1fa62f93-62b1-4af8-b2f6-9469eea17fa8)
+
 ## Usage
 
 ### Command Line Interface
@@ -99,7 +102,6 @@ poetry run python src/main.py --ticker TSLA --round-table
 # Backtest with custom parameters
 poetry run python src/backtester.py --ticker BTC-USD,ETH-USD --crypto --initial-cash 100000
 ```
-
 ### Web Interface
 1. Navigate to http://localhost:3000
 2. Select analysis type (single analysis, backtest, or round table)
