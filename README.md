@@ -2,13 +2,12 @@
 
 <img align="right" width="400" src="https://github.com/user-attachments/assets/4eab549a-76ce-4e88-aac7-1f74a19b6e6d" alt="pepe"/>
 
-Leverage the latest AI, Realtime Financial stats, news, algorithms, reddit posts... to lose your money. 
+Leverage the latest AI, Realtime Financial stats, news, algorithms, reddit posts... to make trading decisions for you. 
 
 Powered by:
 - Nancy Pelosi's highly intelligent plays
-- Cathie Wood to drain your portfolio
 - avg WSB regard and his posts on the reddit
-- boomer buffett's 
+- boomer buffett's boomer logic
 - And more! 
 - Jim cramar to be added...
 
