@@ -6,6 +6,7 @@ import darkTheme from '../theme/darkTheme';
 import Layout from '../components/Layout';
 import '../styles/globals.css';
 import Head from 'next/head';
+import EnhancedConsole from '../components/EnhancedConsole';
 
 function MyApp({ Component, pageProps }) {
   return (
@@ -21,6 +22,7 @@ function MyApp({ Component, pageProps }) {
       <Layout>
         <Component {...pageProps} />
       </Layout>
+      <EnhancedConsole />
     </ThemeProvider>
   );
 }
