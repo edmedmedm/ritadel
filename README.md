@@ -1,6 +1,6 @@
 # ritadel
 
-<img align="right" width="400" src="https://github.com/user-attachments/assets/1df4003a-7b17-497a-beed-e3e35409a5b8" alt="pepe"/>
+<img align="right" width="400" src="https://github.com/user-attachments/assets/4eab549a-76ce-4e88-aac7-1f74a19b6e6d" alt="pepe"/>
 
 Leverage the latest AI, Realtime Financial stats, news, algorithms, reddit posts... to lose your money. 
 
