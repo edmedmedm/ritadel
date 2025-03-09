@@ -43,3 +43,7 @@ Thumbs.db
 
 # Txt files
 *.txt
+
+#node
+/webui/.next
+/webui/node_modules
