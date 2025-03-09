@@ -2,7 +2,7 @@
 
 <img align="right" width="400" src="https://github.com/user-attachments/assets/1df4003a-7b17-497a-beed-e3e35409a5b8" alt="pepe"/>
 
-tl;dr: Made some AI characters fight in a chatroom with all info. ramped up all the way to match an avg wsb regard
+Leverage the latest AI, Realtime Financial stats, algorithms, posts, algorithms to lose your money. 
 
 Powered by:
 - Nancy Pelosi's highly intelligent plays
