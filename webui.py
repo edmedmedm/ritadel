@@ -18,6 +18,7 @@ import queue
 import io
 import contextlib
 import builtins  # Add this import at the top of the file
+from colorama import Fore, Style, init
 
 # Load environment variables from .env file
 load_dotenv()
@@ -733,6 +734,7 @@ def run_hedge_fund_for_web(tickers, selected_analysts, model_name, start_date=No
     from src.main import create_workflow
     from src.graph.state import AgentState, show_agent_reasoning
     from src.llm.models import get_model_info
+    init(autoreset=True)  # Initialize colorama
     
     # Import progress tracker from the correct location
     try:
@@ -833,20 +835,20 @@ def run_hedge_fund_for_web(tickers, selected_analysts, model_name, start_date=No
                     if "data" in result:
                         state["data"] = result["data"]
                     
-                    # Display output in CLI-style
+                    # Display output in CLI-style with colors
                     if analyst_name in state["data"]["analyst_signals"]:
                         analyst_output = state["data"]["analyst_signals"][analyst_name]
                         formatted_name = analyst_name.replace("_agent", "").replace("_", " ").title()
                         
-                        # Print formatted analysis like in CLI
-                        print(f"\n{'=' * 10}     {formatted_name} Agent     {'=' * 10}")
+                        # Print formatted analysis like in CLI with colors
+                        print(f"\n{Fore.CYAN}{Style.BRIGHT}{'=' * 10}     {formatted_name} Agent     {'=' * 10}{Style.RESET_ALL}")
                         print(json.dumps(analyst_output, indent=2))
-                        print(f"{'=' * 48}\n")
+                        print(f"{Fore.CYAN}{Style.BRIGHT}{'=' * 48}{Style.RESET_ALL}\n")
                         
                         # Also broadcast to WebSocket
                         broadcast_log(f"===== {formatted_name} Analysis =====", "info")
                         broadcast_log(json.dumps(analyst_output, indent=2), "info")
-                    
+                
                 broadcast_log(f"Completed {analyst_name} analysis", "success")
             except Exception as e:
                 broadcast_log(f"Error in {analyst_name}: {str(e)}", "error")
@@ -863,12 +865,12 @@ def run_hedge_fund_for_web(tickers, selected_analysts, model_name, start_date=No
                 if "data" in result:
                     state["data"] = result["data"]
                 
-                # Display output in CLI-style
+                # Display output in CLI-style with colors
                 if "risk_management_agent" in state["data"]["analyst_signals"]:
                     risk_output = state["data"]["analyst_signals"]["risk_management_agent"]
-                    print(f"\n{'=' * 10}    Risk Management Agent     {'=' * 10}")
+                    print(f"\n{Fore.CYAN}{Style.BRIGHT}{'=' * 10}    Risk Management Agent     {'=' * 10}{Style.RESET_ALL}")
                     print(json.dumps(risk_output, indent=2))
-                    print(f"{'=' * 48}\n")
+                    print(f"{Fore.CYAN}{Style.BRIGHT}{'=' * 48}{Style.RESET_ALL}\n")
                     
                     # Also broadcast to WebSocket
                     broadcast_log("===== Risk Management Analysis =====", "info")
@@ -888,12 +890,12 @@ def run_hedge_fund_for_web(tickers, selected_analysts, model_name, start_date=No
                 if "data" in result:
                     state["data"] = result["data"]
                 
-                # Display output in CLI-style for portfolio decisions
+                # Display output in CLI-style with colors for portfolio decisions
                 if "portfolio_decision" in state["data"]:
                     portfolio_decisions = state["data"]["portfolio_decision"]
-                    print(f"\n{'=' * 10}    Portfolio Management Agent     {'=' * 10}")
+                    print(f"\n{Fore.CYAN}{Style.BRIGHT}{'=' * 10}    Portfolio Management Agent     {'=' * 10}{Style.RESET_ALL}")
                     print(json.dumps(portfolio_decisions, indent=2))
-                    print(f"{'=' * 48}\n")
+                    print(f"{Fore.CYAN}{Style.BRIGHT}{'=' * 48}{Style.RESET_ALL}\n")
                     
                     # Also broadcast to WebSocket
                     broadcast_log("===== Portfolio Decisions =====", "info")
@@ -927,6 +929,20 @@ def run_hedge_fund_for_web(tickers, selected_analysts, model_name, start_date=No
                         result["ticker_analyses"][ticker]["signals"][f"{agent_name}_confidence"] = signal_data["confidence"]
                     if "reasoning" in signal_data:
                         result["ticker_analyses"][ticker]["reasoning"][agent_name] = signal_data["reasoning"]
+    
+    # Ensure signal consistency in the ticker_analyses
+    if result["ticker_analyses"] and len(selected_analysts) == 1:
+        for ticker, analysis in result["ticker_analyses"].items():
+            # If there's only one analyst, use their signal as the overall signal
+            analyst_name = selected_analysts[0]
+            if "signals" in analysis and analyst_name in analysis["signals"]:
+                # Get the analyst's signal 
+                analyst_signal = analysis["signals"][analyst_name]
+                # Set it as the overall signal
+                analysis["signals"]["overall"] = analyst_signal
+                # Set confidence too
+                if f"{analyst_name}_confidence" in analysis["signals"]:
+                    analysis["signals"]["confidence"] = analysis["signals"][f"{analyst_name}_confidence"]
     
     broadcast_log("Analysis completed successfully", "success")
     return result
