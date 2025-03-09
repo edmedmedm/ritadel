@@ -17,6 +17,7 @@ from flask_sock import Sock
 import queue
 import io
 import contextlib
+import builtins  # Add this import at the top of the file
 
 # Load environment variables from .env file
 load_dotenv()
@@ -264,26 +265,16 @@ def start_api_server(host=DEFAULT_HOST, port=API_PORT):
     websocket_clients = []
 
     def broadcast_log(message, level="info"):
+        # Also print to console
+        print(message)
+        
+        # Send to WebSocket clients
         log_data = {"level": level, "message": message}
-        for client in websocket_clients[:]:  # Use a copy of the list to avoid modification during iteration
+        for client in websocket_clients[:]:
             try:
                 client.send(json.dumps(log_data))
             except Exception:
-                # If sending fails, remove the client
                 websocket_clients.remove(client)
-
-    # Override print to broadcast to websocket
-    original_print = print
-    def websocket_print(*args, **kwargs):
-        # Call the original print
-        original_print(*args, **kwargs)
-        
-        # Convert args to string and broadcast
-        message = " ".join(str(arg) for arg in args)
-        broadcast_log(message)
-
-    # Replace the print function
-    print = websocket_print
 
     # WebSocket endpoint for logs
     @sock.route('/ws/logs')

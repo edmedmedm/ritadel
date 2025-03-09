@@ -1,9 +1,11 @@
 @echo off
-echo Starting API server...
-start cmd /k python webui.py --api
+echo Starting API server with Poetry...
+
+REM Start the API server using Poetry run
+start cmd /k poetry run python webui.py --api
 
 echo Waiting for API server to initialize...
-timeout /t 3
+timeout /t 5
 
 echo Starting Next.js dev server...
 cd webui
