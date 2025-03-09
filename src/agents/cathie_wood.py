@@ -281,7 +281,7 @@ def analyze_innovation_growth(metrics: list, financial_line_items: list) -> dict
         details.append("Insufficient R&D data for trend analysis")
 
     # 2. Free Cash Flow Analysis
-    fcf_vals = [item.free_cash_flow for item in financial_line_items if item.free_cash_flow]
+    fcf_vals = [item.free_cash_flow for item in financial_line_items if hasattr(item, 'free_cash_flow') and item.free_cash_flow is not None]
     if fcf_vals and len(fcf_vals) >= 2:
         # Check FCF growth and consistency
         fcf_growth = (fcf_vals[-1] - fcf_vals[0]) / abs(fcf_vals[0])
@@ -300,7 +300,9 @@ def analyze_innovation_growth(metrics: list, financial_line_items: list) -> dict
         details.append("Insufficient FCF data for analysis")
 
     # 3. Operating Efficiency Analysis
-    op_margin_vals = [item.operating_margin for item in financial_line_items if item.operating_margin]
+    op_margin_vals = [item.operating_margin for item in financial_line_items 
+                     if hasattr(item, 'operating_margin') and item.operating_margin is not None]
+    
     if op_margin_vals and len(op_margin_vals) >= 2:
         # Check margin improvement
         margin_trend = op_margin_vals[-1] - op_margin_vals[0]

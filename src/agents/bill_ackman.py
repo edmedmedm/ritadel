@@ -154,8 +154,8 @@ def analyze_business_quality(metrics: list, financial_line_items: list) -> dict:
     
     # 2. Operating margin and free cash flow consistency
     # We'll check if operating_margin or free_cash_flow are consistently positive/improving
-    fcf_vals = [item.free_cash_flow for item in financial_line_items if item.free_cash_flow is not None]
-    op_margin_vals = [item.operating_margin for item in financial_line_items if item.operating_margin is not None]
+    fcf_vals = [item.free_cash_flow for item in financial_line_items if hasattr(item, 'free_cash_flow') and item.free_cash_flow is not None]
+    op_margin_vals = [item.operating_margin for item in financial_line_items if hasattr(item, 'operating_margin') and item.operating_margin is not None]
     
     if op_margin_vals:
         # Check if the majority of operating margins are > 15%
@@ -212,8 +212,9 @@ def analyze_financial_discipline(metrics: list, financial_line_items: list) -> d
         }
     
     # 1. Multi-period debt ratio or debt_to_equity
-    # Check if the company’s leverage is stable or improving
-    debt_to_equity_vals = [item.debt_to_equity for item in financial_line_items if item.debt_to_equity is not None]
+    # Check if the company's leverage is stable or improving
+    debt_to_equity_vals = [item.debt_to_equity for item in financial_line_items 
+                          if hasattr(item, 'debt_to_equity') and item.debt_to_equity is not None]
     
     # If we have multi-year data, see if D/E ratio has gone down or stayed <1 across most periods
     if debt_to_equity_vals:

@@ -59,8 +59,17 @@ def valuation_agent(state: AgentState):
         previous_financial_line_item = financial_line_items[1]
 
         progress.update_status("valuation_agent", ticker, "Calculating owner earnings")
-        # Calculate working capital change
-        working_capital_change = current_financial_line_item.working_capital - previous_financial_line_item.working_capital
+        # Safely check for working_capital attribute
+        if (hasattr(current_financial_line_item, 'working_capital') and 
+            hasattr(previous_financial_line_item, 'working_capital') and
+            current_financial_line_item.working_capital is not None and 
+            previous_financial_line_item.working_capital is not None):
+            
+            working_capital_change = current_financial_line_item.working_capital - previous_financial_line_item.working_capital
+        else:
+            # Default to zero if working_capital attribute is not available
+            working_capital_change = 0
+            progress.update_status("valuation_agent", ticker, "Note: Working capital data not available")
 
         # Owner Earnings Valuation (Buffett Method)
         owner_earnings_value = calculate_owner_earnings_value(
@@ -177,6 +186,10 @@ def calculate_owner_earnings_value(
 
     if owner_earnings <= 0:
         return 0
+        
+    # Ensure growth_rate is not None
+    if growth_rate is None:
+        growth_rate = 0.05  # Use a default 5% growth rate
 
     # Project future owner earnings
     future_values = []
@@ -208,6 +221,22 @@ def calculate_intrinsic_value(
     Computes the discounted cash flow (DCF) for a given company based on the current free cash flow.
     Use this function to calculate the intrinsic value of a stock.
     """
+    # Check if free_cash_flow is valid
+    if free_cash_flow is None or not isinstance(free_cash_flow, (int, float)):
+        return 0
+        
+    # Ensure growth_rate is not None
+    if growth_rate is None:
+        growth_rate = 0.05  # Default to 5% growth
+        
+    # Ensure terminal_growth_rate is not None
+    if terminal_growth_rate is None:
+        terminal_growth_rate = 0.02  # Default to 2% terminal growth
+        
+    # Ensure discount_rate is not None
+    if discount_rate is None:
+        discount_rate = 0.10  # Default to 10% discount rate
+    
     # Estimate the future cash flows based on the growth rate
     cash_flows = [free_cash_flow * (1 + growth_rate) ** i for i in range(num_years)]
 

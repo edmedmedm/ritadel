@@ -106,7 +106,7 @@ def analyze_earnings_stability(metrics: list, financial_line_items: list) -> dic
 
     eps_vals = []
     for item in financial_line_items:
-        if item.earnings_per_share is not None:
+        if hasattr(item, 'earnings_per_share') and item.earnings_per_share is not None:
             eps_vals.append(item.earnings_per_share)
 
     if len(eps_vals) < 2:
@@ -138,35 +138,54 @@ def analyze_earnings_stability(metrics: list, financial_line_items: list) -> dic
 def analyze_financial_strength(metrics: list, financial_line_items: list) -> dict:
     """
     Graham checks liquidity (current ratio >= 2), manageable debt,
-    and dividend record (preferably some history of dividends).
+    and overall financial conservatism.
     """
     score = 0
     details = []
 
     if not financial_line_items:
-        return {"score": score, "details": "No data for financial strength analysis"}
+        return {"score": score, "details": "Insufficient data for financial strength analysis"}
 
-    latest_item = financial_line_items[-1]
-    total_assets = latest_item.total_assets or 0
-    total_liabilities = latest_item.total_liabilities or 0
-    current_assets = latest_item.current_assets or 0
-    current_liabilities = latest_item.current_liabilities or 0
+    latest_item = financial_line_items[0]
 
-    # 1. Current ratio
-    if current_liabilities > 0:
+    # 1. Current Ratio
+    # Make sure the attributes exist before trying to use them
+    current_assets = 0
+    current_liabilities = 0
+    
+    if hasattr(latest_item, 'current_assets') and latest_item.current_assets is not None:
+        current_assets = latest_item.current_assets
+    
+    if hasattr(latest_item, 'current_liabilities') and latest_item.current_liabilities is not None:
+        current_liabilities = latest_item.current_liabilities
+        
+    current_ratio = None
+    if current_assets and current_liabilities:
         current_ratio = current_assets / current_liabilities
-        if current_ratio >= 2.0:
+        if current_ratio >= 2:
             score += 2
-            details.append(f"Current ratio = {current_ratio:.2f} (>=2.0: solid).")
+            details.append(f"Strong current ratio: {current_ratio:.2f}")
         elif current_ratio >= 1.5:
             score += 1
-            details.append(f"Current ratio = {current_ratio:.2f} (moderately strong).")
+            details.append(f"Acceptable current ratio: {current_ratio:.2f}")
         else:
-            details.append(f"Current ratio = {current_ratio:.2f} (<1.5: weaker liquidity).")
+            details.append(f"Weak current ratio: {current_ratio:.2f}")
     else:
-        details.append("Cannot compute current ratio (missing or zero current_liabilities).")
+        details.append("Current ratio could not be calculated (missing data)")
 
     # 2. Debt vs. Assets
+    if hasattr(latest_item, 'total_assets') and latest_item.total_assets is not None:
+        total_assets = latest_item.total_assets
+    else:
+        details.append("Cannot compute debt ratio (missing total_assets).")
+        return {"score": score, "details": "; ".join(details)}
+
+    if hasattr(latest_item, 'total_liabilities') and latest_item.total_liabilities is not None:
+        total_liabilities = latest_item.total_liabilities
+    else:
+        details.append("Cannot compute debt ratio (missing total_liabilities).")
+        return {"score": score, "details": "; ".join(details)}
+
     if total_assets > 0:
         debt_ratio = total_liabilities / total_assets
         if debt_ratio < 0.5:
@@ -203,20 +222,36 @@ def analyze_financial_strength(metrics: list, financial_line_items: list) -> dic
 
 def analyze_valuation_graham(metrics: list, financial_line_items: list, market_cap: float) -> dict:
     """
-    Core Graham approach to valuation:
-    1. Net-Net Check: (Current Assets - Total Liabilities) vs. Market Cap
-    2. Graham Number: sqrt(22.5 * EPS * Book Value per Share)
-    3. Compare per-share price to Graham Number => margin of safety
+    Graham favors:
+    1. Net-Nets: NCAV > Market Cap.
+    2. Low P/B with decent earnings yield.
+    3. Graham Number vs current price.
     """
-    if not financial_line_items or not market_cap or market_cap <= 0:
-        return {"score": 0, "details": "Insufficient data to perform valuation"}
+    if not financial_line_items or market_cap is None:
+        return {"score": 0, "details": "Insufficient data for Graham valuation"}
 
-    latest = financial_line_items[-1]
-    current_assets = latest.current_assets or 0
-    total_liabilities = latest.total_liabilities or 0
-    book_value_ps = latest.book_value_per_share or 0
-    eps = latest.earnings_per_share or 0
-    shares_outstanding = latest.outstanding_shares or 0
+    latest = financial_line_items[0]
+    
+    # Add proper attribute checks for all attributes
+    current_assets = 0
+    if hasattr(latest, 'current_assets') and latest.current_assets is not None:
+        current_assets = latest.current_assets
+        
+    total_liabilities = 0
+    if hasattr(latest, 'total_liabilities') and latest.total_liabilities is not None:
+        total_liabilities = latest.total_liabilities
+        
+    book_value_ps = 0
+    if hasattr(latest, 'book_value_per_share') and latest.book_value_per_share is not None:
+        book_value_ps = latest.book_value_per_share
+        
+    eps = 0
+    if hasattr(latest, 'earnings_per_share') and latest.earnings_per_share is not None:
+        eps = latest.earnings_per_share
+        
+    shares_outstanding = 0
+    if hasattr(latest, 'outstanding_shares') and latest.outstanding_shares is not None:
+        shares_outstanding = latest.outstanding_shares
 
     details = []
     score = 0
