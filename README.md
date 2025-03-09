@@ -75,8 +75,8 @@ The agents participate in a simulated round table discussion where they:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/KRSHH/Ritadel.git
-cd Ritadel
+git clone https://github.com/KRSHH/ritadel.git
+cd ritadel
 ```
 
 2. Install Poetry (if not already installed):
