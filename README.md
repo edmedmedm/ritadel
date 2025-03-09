@@ -1,6 +1,6 @@
-# 🚀 ritadel
+# ritadel
 
-<img align="right" width="400" src="assets/pepe-trader.png" alt="pepe trader"/>
+<img align="right" width="400" src="https://github.com/user-attachments/assets/1df4003a-7b17-497a-beed-e3e35409a5b8" alt="pepe"/>
 
 Leverage the latest AI, Realtime Financial stats, news, algorithms, reddit posts... to lose your money. 
 
@@ -14,35 +14,35 @@ Powered by:
 
 Basically created an AI chatroom where boomer buffet and wsb regard work together as a hedge fund.
 
-## 🌟 Key Features
+## Key Features
 
-### 🤖 Multi-Agent System
+### Multi-Agent System
 - **Value Investing Team**: Warren Buffett, Charlie Munger, Ben Graham
 - **Growth & Innovation**: Cathie Wood, Bill Ackman
 - **Alternative Strategies**: Nancy Pelosi (policy edge), WSB (momentum/memes)
 - **Technical Specialists**: Price action, fundamentals, sentiment analysis
 - **Risk Management**: Position sizing, portfolio optimization
 
-### 💬 Round Table Discussions
+### Round Table Discussions
 - Real-time AI conversations between agents
 - Debate investment theses and challenge assumptions
 - Reach consensus through structured dialogue
 - Natural language interactions with personality
 
-### 📊 Analysis Capabilities
+### Analysis Capabilities
 - Multi-source financial data integration
 - Technical and fundamental analysis
 - Sentiment analysis from news and social media
 - Cryptocurrency market analysis
 - Portfolio management and risk assessment
 
-### 🖥️ Modern Web Interface
+### Modern Web Interface
 - Real-time analysis updates
 - Interactive charts and visualizations
 - Backtesting capabilities
 - Trade history and performance tracking
 
-## 🛠️ Installation
+## Installation
 
 ### Prerequisites
 - Python 3.9+
@@ -87,7 +87,7 @@ npm run dev
 
 Visit http://localhost:3000 to access the web interface.
 
-## 🚀 Usage
+## Usage
 
 ### Command Line Interface
 ```bash
@@ -108,7 +108,7 @@ poetry run python src/backtester.py --ticker BTC-USD,ETH-USD --crypto --initial-
 4. Choose AI analysts to include
 5. View real-time analysis and discussions
 
-## 📝 Configuration
+## Configuration
 
 ### Required API Keys
 - At least one LLM provider (OpenAI/Anthropic/Groq/Gemini)
@@ -123,12 +123,6 @@ poetry run python src/backtester.py --ticker BTC-USD,ETH-USD --crypto --initial-
 - CryptoCompare (for crypto)
 
 See `.env.example` for all configuration options.
-
-## ⚠️ Disclaimer
-
-This is an experimental project combining AI, financial analysis, and memes. If you're taking financial advice from an AI pretending to be Warren Buffett debating with an AI pretending to be a WSB degen, you truly belong here.
-
-*Not financial advice. DYOR. To the moon! 🚀*
 
 ## 📄 License
 
