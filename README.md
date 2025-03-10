@@ -128,3 +128,8 @@ See `.env.example` for all configuration options.
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Credits
+
+This is a fork of [ai-hedge-fund](https://github.com/virattt/ai-hedge-fund) By [viratt](https://github.com/virattt) 
+yfinance used for financial data
