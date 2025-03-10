@@ -13,6 +13,8 @@ Powered by:
 
 Basically created an AI chatroom where boomer buffet and wsb regard work together as a hedge fund.
 
+This is a fork of [ai-hedge-fund](https://github.com/virattt/ai-hedge-fund) By [viratt](https://github.com/virattt) 
+
 ## Key Features
 
 ### Multi-Agent System
@@ -132,4 +134,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Credits
 
 This is a fork of [ai-hedge-fund](https://github.com/virattt/ai-hedge-fund) By [viratt](https://github.com/virattt) 
+
 yfinance used for financial data
