@@ -6,6 +6,7 @@ import { runAnalysis } from '../utils/api';
 // Sample data
 const modelOptions = [
   { label: '[anthropic] claude-3.5-sonnet', value: 'claude-3-5-sonnet-latest' },
+  { label: '[ollama] unsloth-QwQ-32B:q6_K_K_45k_t0.1', value: 'MHKetbi/unsloth-QwQ-32B:q6_K_K_45k_t0.1' }, 
   { label: '[anthropic] claude-3.7-sonnet', value: 'claude-3-7-sonnet-latest' },
   { label: '[groq] deepseek-r1 70b', value: 'deepseek-r1-distill-llama-70b' },
   { label: '[groq] llama-3.3 70b', value: 'llama-3.3-70b-versatile' },
